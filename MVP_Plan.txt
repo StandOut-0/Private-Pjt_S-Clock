@@ -1,0 +1,341 @@
+S Ring
+원형 24시간 시간표 앱 · React + TypeScript · iOS / Android
+
+앱 개요
+앱 이름
+S Ring — 원형 다이얼로 하루를 설계하는 시간표 앱. S Diary와 커플 브랜드.
+기술 스택
+React Native + TypeScript / Expo (iOS · Android 동시 출시)
+상태 관리
+Zustand (경량, 로컬 중심 앱에 적합)
+로컬 저장소
+MMKV (빠른 키-값) + 구조 데이터는 SQLite (expo-sqlite)
+데이터 보안
+완전 로컬 저장. 서버 전송 없음. JSON 내보내기만 지원.
+다크모드
+시스템 설정 연동 + 앱 내 수동 전환 지원
+핵심 기능 (MVP)
+🕐 원형 시간표 (메인)
+24시간 이중 링 다이얼. 안쪽 링(0~12시) + 바깥 링(12~24시). 호(arc)를 탭/드래그하면 스케줄 생성. 랜덤 색상 자동 배정.
+📋 리스트 보기
+시간순 나열. 하루 / 한달 / 연도별 accordion 자동 그룹핑. 최근 항목만 펼쳐진 채로 시작. 나머지는 접힌 상태.
+📝 상세 / 편집 화면
+제목, 시간(시작~끝), 색상 피커, 메모. 수정 및 삭제 가능. 삭제는 confirm 다이얼로그.
+💾 JSON 내보내기
+전체 또는 날짜 범위 지정 내보내기. .json 파일로 기기 저장 또는 공유 시트 전송.
+화면 구성 (3 screens)
+01
+Ring View — 메인 화면. 상단에 날짜 표시 + 뷰 전환 버튼(Ring / List). 24시간 이중 원형 다이얼. 호를 탭하면 신규 스케줄 작성, 기존 호를 탭하면 상세 이동. 하단에 오늘 스케줄 요약 바.
+
+02
+List View — 동일 상단 날짜 + 전환 버튼. 스케줄을 시간순 나열. 연도 → 월 → 일 3단계 accordion. 기본 상태: 오늘 날짜 섹션만 오픈. 각 항목에 색상 도트 + 제목 + 시간 표시.
+
+03
+Detail / Edit View — 제목 입력, 시작·종료 시간 피커, 색상 선택(팔레트 + 커스텀), 메모 텍스트. 저장 / 삭제 버튼. 신규 생성과 수정 모두 동일 화면 재사용.
+
+원형 다이얼 UX 설계
+24시간을 이중 링으로 표현. 안쪽 링: 0시~12시 (AM) · 바깥 링: 12시~24시 (PM). 스케줄은 해당 링 위에 호(arc)로 렌더링. 색상은 랜덤 배정 후 수정 가능.
+
+링 위 빈 영역 탭 → 해당 시간대 기본값으로 신규 작성 화면 진입
+기존 호(arc) 탭 → 해당 스케줄 상세 화면 진입
+스케줄이 겹치는 경우 호를 안쪽으로 레이어 표시 (최대 3단)
+현재 시각 바늘(침) 표시로 지금 위치 확인 가능
+핀치 줌으로 특정 시간대 확대 (선택 구현)
+데이터 모델
+id
+string — UUID v4
+title
+string — 스케줄 제목
+date
+string — yyyy-mm-dd
+startTime
+string — HH:mm
+endTime
+string — HH:mm
+color
+string — hex 색상 코드 (랜덤 생성 후 수정 가능)
+memo
+string? — 선택 메모 (확장용)
+createdAt
+number — timestamp
+updatedAt
+number — timestamp
+기술 스택 상세
+코어
+React Native TypeScript Expo SDK 51+ Expo Router
+상태 / 저장
+Zustand expo-sqlite MMKV (설정)
+UI / 애니메이션
+react-native-svg react-native-reanimated react-native-gesture-handler
+유틸
+date-fns expo-file-system expo-sharing uuid
+원형 다이얼 렌더링: react-native-svg로 SVG arc를 직접 계산. 외부 차트 라이브러리 없이 커스텀 구현 → 인터랙션 완전 제어 가능.
+
+예상 일정 (3주 · 15일)
+1주차 — 뼈대 + 원형 다이얼
+Day 1 · 프로젝트 세팅 + 폴더구조
+Day 2 · 기본 테마 + 다크모드
+Day 3 · SVG 원형 다이얼 렌더링
+Day 4 · 탭 인터랙션 + 시간 계산 로직
+Day 5 · 데이터 모델 + SQLite 세팅
+2주차 — CRUD + 리스트
+Day 6 · 상세/편집 화면 CRUD
+Day 7 · 색상 피커 UI
+Day 8 · 리스트 뷰 + accordion
+Day 9 · Ring ↔ List 전환 버튼
+Day 10 · JSON 내보내기
+3주차 — UX 다듬기 + 배포
+Day 11 · 애니메이션 + 전환 효과
+Day 12 · 예외처리 + 엣지케이스
+Day 13 · 아이콘 + 스플래시
+Day 14 · Android / iOS 빌드 테스트
+Day 15 · 스토어 제출
+폴더 구조
+app/
+  ├─ (tabs)/
+  │   ├─ index.tsx      ← Ring View (메인)
+  │   └─ list.tsx       ← List View
+  └─ detail/[id].tsx  ← Detail / Edit
+
+src/
+  ├─ components/
+  │   ├─ RingDial/      ← SVG 원형 다이얼
+  │   ├─ ScheduleArc/   ← 개별 호 렌더링
+  │   ├─ AccordionList/  ← 날짜 그룹 리스트
+  │   └─ ColorPicker/    ← 색상 선택
+  ├─ store/
+  │   └─ scheduleStore.ts ← Zustand
+  ├─ db/
+  │   └─ database.ts     ← SQLite CRUD
+  ├─ utils/
+  │   ├─ arcMath.ts      ← 시간→각도 계산
+  │   ├─ colorGen.ts     ← 랜덤 색상 생성
+  │   └─ exportJson.ts   ← JSON 내보내기
+  └─ theme/            ← 다크/라이트 테마
+S Ring vs S Diary 브랜드 정의
+S Diary
+날짜 기반 감정 기록. 캘린더 중심. 감성적. 과거를 돌아보는 앱.
+S Ring
+시간 기반 일정 설계. 원형 다이얼 중심. 구조적. 하루를 설계하는 앱.
+두 앱 모두 "S" 브랜드 아래, 로컬 저장 + 미니멀 디자인 원칙 공유. 나중에 같은 디자인 시스템으로 묶어 패밀리 앱 구성 가능.
+
+
+
+--------------------------------------------------------------------------------------------------------
+S Ring — 상세 개발 일정
+15일 · 혼자 · MVP 우선 · Expo + React Native + TypeScript
+
+1주차  ·  뼈대 + 원형 다이얼 + 보안 기반
+1
+DAY
+목표
+앱 실행 → 화면 뜬다
+Expo 프로젝트 생성 expo init s-ring --template expo-template-blank-typescript
+
+폴더 구조 설계 및 생성
+app/ · src/components/ · src/store/ · src/db/ · src/utils/ · src/theme/
+
+Expo Router 세팅 + 탭 네비게이션 뼈대 (Ring / List)
+
+기본 테마 파일 작성 theme/colors.ts · 라이트/다크 팔레트 정의
+
+스플래시 화면 뼈대 + 앱 아이콘 플레이스홀더
+
+2
+DAY
+목표
+다크모드 + 테마 시스템 완성
+시스템 다크모드 감지 연동 useColorScheme
+
+앱 내 수동 다크/라이트 전환 버튼 구현 + MMKV에 설정 저장
+
+ThemeContext 또는 Zustand theme slice 설계
+
+공통 컴포넌트 기초 (Text, View wrapper) 테마 적용 확인
+
+폰트 세팅 expo-font + 기본 타이포그래피 상수 정의
+
+3
+DAY
+목표
+SVG 원형 다이얼 렌더링 완성
+react-native-svg 설치 + 원 2개(이중 링) 기본 렌더링
+
+arcMath.ts 작성 — 시간(HH:mm) → 각도(degree) → SVG path 변환 함수
+
+안쪽 링(0~12시 AM) · 바깥 링(12~24시 PM) 분리 렌더링
+
+시간 눈금(0, 3, 6, 9, 12, 15, 18, 21시) 텍스트 라벨 표시
+
+현재 시각 바늘(침) 표시 — 1분 단위 실시간 업데이트
+
+4
+DAY
+목표
+다이얼 탭 인터랙션 완성
+react-native-gesture-handler 설치 + 터치 좌표 → 시간 역산 로직 구현
+
+링 영역 탭 감지 — 안쪽/바깥 링 구분 + 탭 위치 → 시작 시간 자동 계산
+
+더미 스케줄 데이터로 호(arc) 렌더링 테스트
+
+호 겹침 처리 — 동일 시간대 스케줄 최대 3단 레이어 오프셋 알고리즘
+
+탭 피드백 애니메이션 (scale + opacity) react-native-reanimated
+
+5
+DAY
+목표
+데이터 모델 + SQLite 세팅 완료
+expo-sqlite 설치 + DB 초기화 함수 database.ts 작성
+
+Schedule 테이블 생성 쿼리 (id, title, date, startTime, endTime, color, memo, createdAt, updatedAt)
+
+CRUD 함수 작성 — createSchedule · getSchedulesByDate · updateSchedule · deleteSchedule
+
+Zustand scheduleStore.ts 설계 — DB 연동 + 상태 슬라이스 정의
+
+앱 재실행 시 데이터 유지 확인 + 더미 데이터 삽입 테스트
+
+2주차  ·  CRUD + 리스트 + 전환 UX
+6
+DAY
+목표
+상세/편집 화면 CRUD 완성
+Detail / Edit 화면 라우팅 설정 app/detail/[id].tsx + 신규 생성 진입 app/detail/new.tsx
+
+제목 입력 + 시작·종료 시간 피커 UI (@react-native-community/datetimepicker)
+
+저장 버튼 → DB insert/update + Zustand 상태 갱신 → Ring View 실시간 반영
+
+삭제 버튼 + confirm 다이얼로그 → DB delete + 상태 갱신
+
+Ring View에서 기존 호 탭 → 해당 스케줄 상세 화면 이동 플로우 완성
+
+7
+DAY
+목표
+색상 피커 + 랜덤 색상 완성
+colorGen.ts 작성 — HSL 기반 랜덤 색상 생성 (채도/명도 범위 고정으로 튀지 않게)
+
+신규 스케줄 생성 시 자동 랜덤 색상 배정
+
+색상 피커 UI 컴포넌트 — 프리셋 팔레트(12색) + 커스텀 hex 직접 입력
+
+선택한 색상 → 호(arc) + 리스트 도트 실시간 반영 확인
+
+다크모드에서 색상 가독성 점검 (너무 밝은/어두운 색 경고 처리)
+
+8
+DAY
+목표
+리스트 뷰 + accordion 완성
+List View 화면 app/(tabs)/list.tsx — 전체 스케줄 날짜순 조회
+
+date-fns로 연도 → 월 → 일 3단계 자동 그룹핑 유틸 함수 작성
+
+AccordionList 컴포넌트 — 헤더 탭 → 섹션 펼침/접힘 + LayoutAnimation 또는 Reanimated 높이 전환
+
+초기 상태: 오늘 날짜 섹션만 오픈, 나머지 접힘. 오늘 데이터 없으면 가장 최근 날짜 섹션 오픈.
+
+각 항목: 색상 도트 + 제목 + 시작~종료 시간 표시. 탭 → Detail 화면 이동.
+
+9
+DAY
+목표
+Ring ↔ List 전환 버튼 완성
+상단 공통 헤더 컴포넌트 — 날짜 표시 + Ring/List 전환 토글 버튼
+
+전환 시 부드러운 fade 또는 slide 전환 애니메이션 적용
+
+Ring View 하단 플로팅 + 버튼 — 탭 시 랜덤 색상으로 신규 스케줄 작성 화면 진입
+
+헤더 날짜 좌우 스와이프 → 날짜 이동 (Ring View에서 다른 날짜 확인 가능)
+
+날짜별 데이터 필터링 확인 + Zustand selectedDate 슬라이스 연동
+
+10
+DAY
+목표
+JSON 내보내기 + MVP 기능 완료 선언 MVP ✓
+exportJson.ts 작성 — 전체 스케줄 → JSON 직렬화 + expo-file-system으로 기기 저장
+
+expo-sharing으로 공유 시트 열기 (AirDrop · 카카오톡 · 파일 앱 등)
+
+예외 케이스 정리 — 빈 상태(데이터 없음) UI · 스케줄 0건일 때 Ring 안내 문구
+
+성능 체크 — FlatList 스크롤 최적화 keyExtractor · getItemLayout · SVG 렌더 스로틀링
+
+앱 백그라운드 → 재진입 시 데이터 fresh 로드 여부 확인 AppState 이벤트 처리
+
+3주차  ·  UX 다듬기 + 배포
+11
+DAY
+목표
+"쓰고 싶은 앱" 느낌
+UI 디테일 점검 — 여백(spacing) 일관성 · 버튼 크기 · 터치 영역(최소 44pt) 확인
+
+색상 톤 정제 — 라이트/다크 각각에서 전체 화면 스크린샷 찍어 통일감 확인
+
+색상 피커 UI 개선 — 선택된 색상 강조 · 프리셋 배열 시각적 정리
+
+Ring View 호(arc) 텍스트 라벨 — 짧은 제목 호 위에 표시 (너무 짧으면 생략)
+
+List View 빈 섹션 스타일 + 로딩 상태 스켈레톤 UI 추가
+
+12
+DAY
+목표
+애니메이션 + 다크모드 + 접근성
+화면 전환 애니메이션 — Ring↔List 전환 fade · Detail 진입 slide-up (Reanimated)
+
+Accordion 펼침/접힘 height 애니메이션 부드럽게 튜닝
+
+다크모드 전체 화면 재점검 — 모든 색상이 CSS 변수/theme 참조인지 하드코딩 제거
+
+접근성 — 텍스트 크기 시스템 설정 반영 allowFontScaling · 색상 대비 WCAG AA 확인
+
+햅틱 피드백 추가 expo-haptics — 스케줄 생성/삭제 시 가벼운 진동
+
+13
+DAY
+목표
+스토어 제출 준비
+앱 아이콘 최종본 제작 — 1024×1024 PNG · S Ring 로고 (원형 링 모티프)
+
+스플래시 화면 최종 정리 — expo-splash-screen · 배경색 라이트/다크 분기
+
+Android 빌드 테스트 eas build --platform android · 실기기 APK 설치 확인
+
+iOS 빌드 테스트 eas build --platform ios · TestFlight 업로드 + 기기 설치 확인
+
+app.json 최종 점검 — bundleId · versionCode · permissions · privacy manifest (iOS)
+
+14
+DAY
+목표
+스토어 제출 완료
+Play Store — 앱 설명(KO/EN) · 스크린샷 5장(폰) · 카테고리(생산성) · 콘텐츠 등급 설문
+
+App Store Connect — 앱 설명 · 스크린샷(6.5인치·5.5인치) · 개인정보처리방침 URL 등록
+
+두 스토어 모두 심사 제출 완료
+
+릴리즈 노트 초안 작성 — "원형 24시간 시간표로 하루를 설계하세요" 핵심 1줄 카피
+
+S Diary 스토어 페이지에 S Ring 크로스 링크 추가
+
+15
+DAY
+목표
+출시 SHIP 🚀
+심사 대응 — App Store 리젝 사유 확인 및 즉시 수정 재제출 (개인정보·UI 가이드라인 위반 多)
+
+버그 핫픽스 — 심사 중 발견된 크래시·레이아웃 깨짐 OTA 업데이트 expo-updates
+
+릴리즈 노트 최종본 작성 (KO/EN) + 버전 1.0.0 태깅
+
+출시 후 첫 24시간 크래시 모니터링 expo-dev-client 로그 확인
+
+S Diary · S Ring 커플 앱 출시 공유 — 스토어 리뷰 요청 expo-store-review 트리거 시점 설정
+
