@@ -1,8 +1,26 @@
 import { Tabs } from 'expo-router';
+import { ThemeProvider, useTheme } from '../src/theme/ThemeProvider';
+import { ThemeToggleButton } from '../src/components/theme/ThemeToggleButton';
 
-export default function TabLayout() {
+function TabsLayout() {
+  const { colors } = useTheme();
+
   return (
-    <Tabs>
+    <Tabs
+      screenOptions={{
+        tabBarStyle: {
+          backgroundColor: colors.card,
+          borderTopColor: colors.border,
+        },
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.mutedText,
+        headerStyle: {
+          backgroundColor: colors.card,
+        },
+        headerTintColor: colors.text,
+        headerRight: () => <ThemeToggleButton />,
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
@@ -16,5 +34,13 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
+  );
+}
+
+export default function TabLayout() {
+  return (
+    <ThemeProvider>
+      <TabsLayout />
+    </ThemeProvider>
   );
 }
