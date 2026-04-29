@@ -2,13 +2,17 @@ import { StyleSheet } from 'react-native';
 import { ThemedText } from '../../src/components/ui/ThemedText';
 import { ThemedView } from '../../src/components/ui/ThemedView';
 import { typography } from '../../src/theme/typography';
+import { RingDial } from '../../src/components/RingDial/RingDial';
 
 export default function RingView() {
   return (
     <ThemedView style={styles.container}>
       <ThemedView useCard style={styles.card}>
         <ThemedText style={styles.title}>Ring View</ThemedText>
-        <ThemedText muted>테마/폰트 적용 확인 화면</ThemedText>
+        <ThemedText muted style={styles.subtitle}>
+          24시간 이중 링 + 현재 시각 바늘
+        </ThemedText>
+        <RingDial />
       </ThemedView>
     </ThemedView>
   );
@@ -23,13 +27,17 @@ const styles = StyleSheet.create({
   },
   card: {
     width: '100%',
-    maxWidth: 360,
+    maxWidth: 380,
     padding: 20,
     borderRadius: 16,
+    alignItems: 'center',
   },
   title: {
     fontSize: typography.size.lg,
     lineHeight: typography.lineHeight.lg,
-    marginBottom: 8,
+    marginBottom: 6,
+  },
+  subtitle: {
+    marginBottom: 16,
   },
 });
