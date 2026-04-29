@@ -1,0 +1,16 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^Test-Path \"C:\\\\Users\\\\playdata2\\\\AppData\\\\Local\\\\Programs\\\\cursor\\\\resources\\\\app\\\\bin\\\\node\\.exe\"$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^Get-Command nvm -ErrorAction SilentlyContinue; Test-Path \"\\$env:APPDATA\\\\nvm\"$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^cd \"D:\\\\Personal\\\\P-PJT\\\\Private-Pjt_S Clock\" ; npx expo start$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}
