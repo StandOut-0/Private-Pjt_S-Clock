@@ -11,6 +11,10 @@
         "/^cd \"D:\\\\Personal\\\\P-PJT\\\\Private-Pjt_S Clock\" ; npx expo start$/": {
             "approve": true,
             "matchCommandLine": true
+        },
+        "/^cd \"D:\\\\Personal\\\\P-PJT\\\\Private-Pjt_S Clock\" ; npx expo install expo-sqlite$/": {
+            "approve": true,
+            "matchCommandLine": true
         }
     }
 }

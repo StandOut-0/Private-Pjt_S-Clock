@@ -7,13 +7,11 @@ import { RingDial } from '../../src/components/RingDial/RingDial';
 export default function RingView() {
   return (
     <ThemedView style={styles.container}>
-      {/* <ThemedView useCard style={styles.card}> */}
-        <ThemedText style={styles.title}>Ring View</ThemedText>
-        <ThemedText muted style={styles.subtitle}>
-          24시간 이중 링 + 현재 시각 바늘
-        </ThemedText>
-        <RingDial />
-      {/* </ThemedView> */}
+      <ThemedText style={styles.title}>Ring View</ThemedText>
+      <ThemedText muted style={styles.subtitle}>
+        24시간 이중 링 + 현재 시각 바늘
+      </ThemedText>
+      <RingDial />
     </ThemedView>
   );
 }

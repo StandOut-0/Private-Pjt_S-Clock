@@ -3,6 +3,7 @@ import { Animated, Pressable, StyleSheet, View } from 'react-native';
 import { useTheme } from '../../theme/ThemeProvider';
 import { ThemedText } from '../ui/ThemedText';
 import { getPointOnCircle } from '../../utils/arcMath';
+import { useScheduleStore } from '../../store/scheduleStore';
 
 const DIAL_SIZE = 380;
 const CENTER = DIAL_SIZE / 2;
@@ -12,39 +13,6 @@ const OUTER_LABEL_RADIUS = 185;
 const INNER_LABEL_RADIUS = 90;
 const OUTER_TRACK_RADIUS = 150;
 const INNER_TRACK_RADIUS = 85;
-
-type DummySchedule = {
-  id: string;
-  title: string;
-  startMinutes: number;
-  endMinutes: number;
-  color: string;
-  isPast?: boolean;
-};
-
-// 색상을 채도만 낮춘 회색 버전으로 변환
-function desaturateColor(color: string, factor: number = 0.3): string {
-  // HEX를 RGB로 변환
-  const hex = color.replace('#', '');
-  const r = parseInt(hex.substring(0, 2), 16);
-  const g = parseInt(hex.substring(2, 4), 16);
-  const b = parseInt(hex.substring(4, 6), 16);
-
-  // 명도(lightness) 계산
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  const lightness = (max + min) / 2 / 255;
-
-  // 회색으로 변환 (명도 유지, 채도 0)
-  const gray = Math.round(lightness * 255);
-
-  // 원래 색상과 회색을 섞기
-  const mixedR = Math.round(r * factor + gray * (1 - factor));
-  const mixedG = Math.round(g * factor + gray * (1 - factor));
-  const mixedB = Math.round(b * factor + gray * (1 - factor));
-
-  return `#${mixedR.toString(16).padStart(2, '0')}${mixedG.toString(16).padStart(2, '0')}${mixedB.toString(16).padStart(2, '0')}`;
-}
 
 function hourToAngleIn12HourDial(hour: number) {
   const normalized = ((hour % 12) + 12) % 12;
@@ -60,6 +28,31 @@ function currentTimeTo12HourAngle(totalMinutes: number) {
 function getNowMinutes() {
   const now = new Date();
   return now.getHours() * 60 + now.getMinutes();
+}
+
+// HEX 색상의 채도를 줄이는 함수 (grayFactor: 0-1, 1이면 완전 회색)
+function desaturateColor(hex: string, grayFactor: number = 0.7): string {
+  // HEX를 RGB로 변환
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+
+  // RGB를 HSL로 변환
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+
+  // 채도 감소: 색상을 회색으로 섞음
+  const grayR = l;
+  const grayG = l;
+  const grayB = l;
+
+  const newR = Math.round((r * (1 - grayFactor) + grayR * grayFactor) * 255);
+  const newG = Math.round((g * (1 - grayFactor) + grayG * grayFactor) * 255);
+  const newB = Math.round((b * (1 - grayFactor) + grayB * grayFactor) * 255);
+
+  const toHex = (n: number) => n.toString(16).padStart(2, '0');
+  return `#${toHex(newR)}${toHex(newG)}${toHex(newB)}`;
 }
 
 function parseTimeInput(value: string): number | null {
@@ -84,7 +77,7 @@ function angleToMinutesInDay(angle: number) {
   return Math.round((normalized / 360) * 720) % 720;
 }
 
-function resolveOverlapLevel(items: DummySchedule[]) {
+function resolveOverlapLevel(items: { id: string; startMinutes: number; endMinutes: number }[]) {
   const sorted = [...items].sort((a, b) => a.startMinutes - b.startMinutes);
   const activeEndByLevel = [-1, -1, -1];
   const levelById: Record<string, number> = {};
@@ -104,13 +97,17 @@ function resolveOverlapLevel(items: DummySchedule[]) {
 
 export function RingDial() {
   const { colors } = useTheme();
+  const { schedules, selectedDate } = useScheduleStore();
   const [nowMinutes, setNowMinutes] = useState(getNowMinutes());
-  // const [manualInput, setManualInput] = useState('');
-  // const [manualMinutes, setManualMinutes] = useState<number | null>(null);
-  // const [inputError, setInputError] = useState('');
-  // const [tapInfo, setTapInfo] = useState('링을 탭하면 시간 계산 결과가 표시됩니다.');
   const [selectedScheduleId, setSelectedScheduleId] = useState<string | null>(null);
   const dialScale = useRef(new Animated.Value(1)).current;
+
+  // 디버깅 로그
+  useEffect(() => {
+    console.log('[RingDial] schedules count:', schedules.length);
+    console.log('[RingDial] selectedDate:', selectedDate);
+    console.log('[RingDial] schedules:', schedules.map(s => ({ title: s.title, date: s.date })));
+  }, [schedules, selectedDate]);
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -178,28 +175,34 @@ export function RingDial() {
   const handLength = Math.hypot(handEnd.x - CENTER, handEnd.y - CENTER);
   const handMidX = (CENTER + handEnd.x) / 2;
   const handMidY = (CENTER + handEnd.y) / 2;
-  const outerSchedules: DummySchedule[] = useMemo(
-    () => [
-      { id: 'o1', title: 'Lunch', startMinutes: 12 * 60 + 30, endMinutes: 13 * 60 + 30, color: '#3B82F6' },
-      { id: 'o2', title: 'Call', startMinutes: 13 * 60, endMinutes: 14 * 60 + 30, color: '#8B5CF6' },
-      { id: 'o3', title: 'Study', startMinutes: 13 * 60 + 20, endMinutes: 15 * 60, color: '#10B981' },
-    ].map(item => ({
-      ...item,
-      isPast: item.endMinutes <= nowMinutes, // 현재 시간보다 전에 끝남
-    })),
-    [nowMinutes]
+
+  // DB에서 가져온 스케줄을 시간(분)으로 변환
+  const schedulesWithMinutes = useMemo(() => {
+    return schedules
+      .filter(schedule => schedule.date === selectedDate)
+      .map(schedule => {
+        const [startHour, startMinute] = schedule.startTime.split(':').map(Number);
+        const [endHour, endMinute] = schedule.endTime.split(':').map(Number);
+        const startMinutes = startHour * 60 + startMinute;
+        const endMinutes = endHour * 60 + endMinute;
+        return {
+          ...schedule,
+          startMinutes,
+          endMinutes,
+        };
+      });
+  }, [schedules, selectedDate]);
+
+  // 안쪽 링(0-12시)과 바깥 링(12-24시)으로 분리
+  const outerSchedules = useMemo(
+    () => schedulesWithMinutes.filter(s => s.startMinutes >= 12 * 60),
+    [schedulesWithMinutes]
   );
-  const innerSchedules: DummySchedule[] = useMemo(
-    () => [
-      { id: 'i1', title: 'Deep Work', startMinutes: 1 * 60, endMinutes: 2 * 60 + 30, color: '#F59E0B' },
-      { id: 'i2', title: 'Exercise', startMinutes: 1 * 60 + 15, endMinutes: 2 * 60, color: '#EF4444' },
-      { id: 'i3', title: 'Reading', startMinutes: 3 * 60, endMinutes: 4 * 60, color: '#06B6D4' },
-    ].map(item => ({
-      ...item,
-      isPast: item.endMinutes <= nowMinutes, // 현재 시간보다 전에 끝남
-    })),
-    [nowMinutes]
+  const innerSchedules = useMemo(
+    () => schedulesWithMinutes.filter(s => s.startMinutes < 12 * 60),
+    [schedulesWithMinutes]
   );
+
   const outerOverlap = useMemo(() => resolveOverlapLevel(outerSchedules), [outerSchedules]);
   const innerOverlap = useMemo(() => resolveOverlapLevel(innerSchedules), [innerSchedules]);
   const orderedOuterSchedules = useMemo(() => {
@@ -329,7 +332,8 @@ export function RingDial() {
           const spread = (level - 1) * 14;
           const label = level === 0 ? item.title : item.title.slice(0, 3);
           const isSelected = selectedScheduleId === item.id;
-          const badgeColor = item.isPast ? desaturateColor(item.color, 0.25) : item.color;
+          const isPast = item.endMinutes < nowMinutes;
+          const bgColor = isPast ? desaturateColor(item.color, 0.8) : item.color;
           return (
             <Pressable
               onPress={() => setSelectedScheduleId(item.id)}
@@ -339,9 +343,8 @@ export function RingDial() {
                 {
                   left: point.x - 28 + tangentX * (spread + (isSelected ? 10 : 0)),
                   top: point.y - 9 + tangentY * (spread + (isSelected ? 10 : 0)),
-                  backgroundColor: badgeColor,
+                  backgroundColor: bgColor,
                   width: level === 0 ? 56 : 42,
-                  opacity: isSelected || level === 0 ? 1 : 0.88,
                   zIndex: isSelected ? 20 : 10 - level,
                   transform: [{ scale: isSelected ? 1.08 : 1 }],
                 },
@@ -363,7 +366,8 @@ export function RingDial() {
           const spread = (level - 1) * 12;
           const label = level === 0 ? item.title : item.title.slice(0, 3);
           const isSelected = selectedScheduleId === item.id;
-          const badgeColor = item.isPast ? desaturateColor(item.color, 0.25) : item.color;
+          const isPast = item.endMinutes < nowMinutes;
+          const bgColor = isPast ? desaturateColor(item.color, 0.8) : item.color;
           return (
             <Pressable
               onPress={() => setSelectedScheduleId(item.id)}
@@ -373,9 +377,8 @@ export function RingDial() {
                 {
                   left: point.x - 28 + tangentX * (spread + (isSelected ? 8 : 0)),
                   top: point.y - 9 + tangentY * (spread + (isSelected ? 8 : 0)),
-                  backgroundColor: badgeColor,
+                  backgroundColor: bgColor,
                   width: level === 0 ? 56 : 40,
-                  opacity: isSelected || level === 0 ? 1 : 0.88,
                   zIndex: isSelected ? 20 : 10 - level,
                   transform: [{ scale: isSelected ? 1.08 : 1 }],
                 },
