@@ -9,6 +9,7 @@ export interface Schedule {
   endTime: string; // HH:mm
   color: string; // hex color
   memo?: string;
+  completed?: boolean;
   createdAt: number; // timestamp
   updatedAt: number; // timestamp
 }
@@ -23,17 +24,12 @@ const isWeb = Platform.OS === 'web';
 
 // 데이터베이스 초기화
 export async function initDatabase(): Promise<void> {
-  if (isWeb) {
-    console.log('[DB] Web mode - using localStorage');
-    return;
-  }
+  if (isWeb) return;
   if (db) return;
   if (initPromise) return initPromise;
 
   initPromise = (async () => {
     db = openDatabase('sring.db');
-    console.log('[DB] Database opened');
-
     await db.execAsync([
       {
         sql: `
@@ -53,7 +49,6 @@ export async function initDatabase(): Promise<void> {
         args: [],
       }
     ], false);
-    console.log('[DB] Tables created');
   })();
 
   return initPromise;
@@ -77,11 +72,7 @@ function getWebSchedules(): Schedule[] {
 }
 
 function setWebSchedules(schedules: Schedule[]): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(schedules));
-  } catch (e) {
-    console.error('[DB] Failed to save to localStorage:', e);
-  }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(schedules));
 }
 
 async function executeSql<T = any>(database: SQLiteDatabase, sql: string, params: (string | number | null)[] = []): Promise<T[]> {
@@ -126,7 +117,6 @@ export async function createSchedule(schedule: Omit<Schedule, 'createdAt' | 'upd
     const schedules = getWebSchedules();
     schedules.push(newSchedule);
     setWebSchedules(schedules);
-    console.log('[DB] Created schedule (web):', schedule.title);
     return;
   }
 
@@ -152,16 +142,10 @@ export async function createSchedule(schedule: Omit<Schedule, 'createdAt' | 'upd
 // 날짜별 스케줄 조회
 export async function getSchedulesByDate(date: string): Promise<Schedule[]> {
   if (isWeb) {
-    const schedules = getWebSchedules().filter(s => s.date === date);
-    console.log('[DB] Query result (web):', schedules.length);
-    return schedules;
+    return getWebSchedules().filter(s => s.date === date);
   }
-
   const database = await getDatabase();
-  console.log('[DB] Querying schedules for date:', date);
-  const result = await executeSql<Schedule>(database, `SELECT * FROM schedules WHERE date = ? ORDER BY startTime ASC`, [date]);
-  console.log('[DB] Query result:', result.length);
-  return result;
+  return await executeSql<Schedule>(database, `SELECT * FROM schedules WHERE date = ? ORDER BY startTime ASC`, [date]);
 }
 
 // 모든 스케줄 조회

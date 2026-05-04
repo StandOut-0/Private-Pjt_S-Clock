@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { SettingsButton } from '../../src/components/SettingsButton';
+import { ViewToggleButton } from '../../src/components/ViewToggleButton';
 
 export default function TabsLayout() {
   const { colors } = useTheme();
@@ -8,29 +9,25 @@ export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarStyle: {
-          backgroundColor: colors.card,
-          borderTopColor: colors.border,
-        },
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.mutedText,
+        tabBarStyle: { display: 'none' }, // 탭 바 숨김
         headerStyle: {
           backgroundColor: colors.card,
         },
         headerTintColor: colors.text,
+        headerLeft: () => <ViewToggleButton />,
         headerRight: () => <SettingsButton />,
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Ring',
+          title: '일정',
         }}
       />
       <Tabs.Screen
         name="list"
         options={{
-          title: 'List',
+          title: '일정',
         }}
       />
     </Tabs>

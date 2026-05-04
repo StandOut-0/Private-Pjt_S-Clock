@@ -1,17 +1,81 @@
-import { StyleSheet } from 'react-native';
+import { useEffect, useState, useCallback } from 'react';
+import { StyleSheet, View, Pressable, Alert } from 'react-native';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { ThemedText } from '../../src/components/ui/ThemedText';
 import { ThemedView } from '../../src/components/ui/ThemedView';
 import { typography } from '../../src/theme/typography';
 import { RingDial } from '../../src/components/RingDial/RingDial';
+import { useScheduleStore } from '../../src/store/scheduleStore';
+
+function getCurrentTimeString(): string {
+  const now = new Date();
+  const hours = now.getHours().toString().padStart(2, '0');
+  const minutes = now.getMinutes().toString().padStart(2, '0');
+  return `${hours}:${minutes}`;
+}
 
 export default function RingView() {
+  const [currentTime, setCurrentTime] = useState(getCurrentTimeString());
+  const schedules = useScheduleStore((state) => state.schedules);
+  const selectedDate = useScheduleStore((state) => state.selectedDate);
+  const loadSchedulesByDate = useScheduleStore((state) => state.loadSchedulesByDate);
+  const router = useRouter();
+
+  // 해당 날짜의 스케줄 필터링 및 완료율 계산
+  const todaySchedules = schedules.filter((s) => s.date === selectedDate);
+  const completedCount = todaySchedules.filter((s) => s.completed).length;
+  const totalCount = todaySchedules.length;
+  const completionRate = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
+  // 화면에 포커스될 때 스케줄 새로고침
+  useFocusEffect(
+    useCallback(() => {
+      loadSchedulesByDate(selectedDate);
+    }, [loadSchedulesByDate, selectedDate])
+  );
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(getCurrentTimeString());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleCreate = () => {
+    const hourCounts: Record<number, number> = {};
+    for (const schedule of todaySchedules) {
+      const [hours] = schedule.startTime.split(':').map(Number);
+      hourCounts[hours] = (hourCounts[hours] || 0) + 1;
+    }
+    const hasAvailableHour = Object.keys(hourCounts).length < 24 || Object.values(hourCounts).some((count) => count < 3);
+    if (!hasAvailableHour) {
+      Alert.alert('알림', '오늘은 이미 모든 시간대에 3개의 스케줄이 등록되어 더 이상 추가할 수 없습니다.');
+      return;
+    }
+    router.push({ pathname: '/detail', params: { new: 'true', date: selectedDate } });
+  };
+
   return (
     <ThemedView style={styles.container}>
-      <ThemedText style={styles.title}>Ring View</ThemedText>
-      <ThemedText muted style={styles.subtitle}>
-        24시간 이중 링 + 현재 시각 바늘
-      </ThemedText>
+      {/* 시간 표시 */}
+      <ThemedText style={styles.timeText}>{currentTime}</ThemedText>
+      
+      {/* 헤더: 프로그레스바 | 완료율 */}
+      <View style={styles.headerRow}>
+        <View style={styles.progressWrapper}>
+          <View style={styles.progressBarBg}>
+            <View style={[styles.progressBarFill, { width: `${completionRate}%` }]} />
+          </View>
+        </View>
+        <ThemedText style={styles.rateText}>{completionRate}% ({completedCount}/{totalCount})</ThemedText>
+      </View>
+      
       <RingDial />
+      
+      {/* FAB - 추가 버튼 (오른쪽 아래) */}
+      <Pressable onPress={handleCreate} style={styles.fab} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <ThemedText style={styles.fabText}>+</ThemedText>
+      </Pressable>
     </ThemedView>
   );
 }
@@ -30,12 +94,63 @@ const styles = StyleSheet.create({
   //   borderRadius: 16,
   //   alignItems: 'center',
   // },
-  title: {
-    fontSize: typography.size.lg,
-    lineHeight: typography.lineHeight.lg,
-    marginBottom: 6,
+  timeText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 8,
   },
-  subtitle: {
-    marginBottom: 16,
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    marginBottom: 24,
+    paddingHorizontal: 20,
+  },
+  progressWrapper: {
+    width: 120,
+  },
+  progressBarBg: {
+    width: '100%',
+    height: 8,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#10B981',
+    borderRadius: 4,
+  },
+  rateText: {
+    fontSize: 14,
+    fontWeight: '600',
+    minWidth: 40,
+  },
+  fab: {
+    position: 'absolute',
+    right: 20,
+    bottom: 30,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#3B82F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 10,
+    zIndex: 999,
+    pointerEvents: 'auto',
+  },
+  fabText: {
+    color: '#FFFFFF',
+    fontSize: 32,
+    fontWeight: '300',
+    lineHeight: 36,
+    textAlign: 'center',
+    marginTop: -4,
   },
 });
