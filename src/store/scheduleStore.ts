@@ -10,6 +10,7 @@ import {
   deleteSchedule as dbDeleteSchedule,
   getScheduleById as dbGetScheduleById,
 } from '../db/database';
+import { generateRandomColor } from '../utils/colorGen';
 
 // ID 생성 함수 (브라우저 호환)
 function generateId(): string {
@@ -93,8 +94,11 @@ export const useScheduleStore = create<ScheduleState>()(
         try {
           set({ error: null });
           const now = Date.now();
+          // 색상이 없으면 랜덤 색상 자동 배정
+          const color = scheduleData.color || generateRandomColor();
           const newSchedule: Schedule = {
             ...scheduleData,
+            color,
             id: generateId(),
             createdAt: now,
             updatedAt: now,

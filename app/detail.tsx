@@ -6,6 +6,8 @@ import { ThemedView } from '../src/components/ui/ThemedView';
 import { useTheme } from '../src/theme/ThemeProvider';
 import { useScheduleStore } from '../src/store/scheduleStore';
 import { Schedule, getScheduleById, updateSchedule, createSchedule } from '../src/db/database';
+import { ColorPicker } from '../src/components/ColorPicker';
+import { generateRandomColor } from '../src/utils/colorGen';
 
 function generateId(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -15,14 +17,9 @@ function generateId(): string {
   });
 }
 
-const PRESET_COLORS = [
-  '#8B5CF6', '#3B82F6', '#EF4444', '#06B6D4', '#F59E0B',
-  '#10B981', '#6366F1', '#EC4899', '#84CC16', '#F97316',
-  '#14B8A6', '#64748B',
-];
-
+// 랜덤 색상은 colorGen에서 가져옴
 function getRandomColor(): string {
-  return PRESET_COLORS[Math.floor(Math.random() * PRESET_COLORS.length)];
+  return generateRandomColor();
 }
 
 export default function DetailScreen() {
@@ -283,26 +280,9 @@ export default function DetailScreen() {
           {isEditing && (
             <View style={styles.section}>
               <ThemedText style={styles.label}>색상</ThemedText>
-              <View style={styles.colorGrid}>
-                {PRESET_COLORS.map((c) => (
-                  <Pressable
-                    key={c}
-                    onPress={() => setColor(c)}
-                    style={[
-                      styles.colorOption,
-                      { backgroundColor: c },
-                      color === c && styles.colorOptionSelected,
-                    ]}
-                  />
-                ))}
-              </View>
-              <TextInput
-                value={color}
-                onChangeText={setColor}
-                style={[styles.input, { borderColor: colors.border, color: colors.text, marginTop: 12 }]}
-                placeholder="#HEX"
-                placeholderTextColor={colors.mutedText}
-                maxLength={7}
+              <ColorPicker
+                selectedColor={color}
+                onSelectColor={setColor}
               />
             </View>
           )}
@@ -487,24 +467,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
   input: {
+    height: 44,
     borderWidth: 1,
     borderRadius: 8,
-    padding: 12,
+    paddingHorizontal: 12,
     fontSize: 16,
-  },
-  colorGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  colorOption: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-  },
-  colorOptionSelected: {
-    borderWidth: 3,
-    borderColor: '#000',
   },
   timeInputs: {
     flexDirection: 'row',
