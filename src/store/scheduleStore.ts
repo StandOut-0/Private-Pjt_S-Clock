@@ -32,6 +32,7 @@ interface ScheduleState {
   isLoading: boolean;
   error: string | null;
   hasSeenCompletionNotice: boolean; // 완료 알림 다시 보지 않기
+  clockColor: string; // 시계 색상
 
   // 액션
   initialize: () => Promise<void>;
@@ -45,6 +46,7 @@ interface ScheduleState {
   clearHighlightedId: () => void;
   clearError: () => void;
   setHasSeenCompletionNotice: (value: boolean) => void;
+  setClockColor: (color: string) => void;
 }
 
 export const useScheduleStore = create<ScheduleState>()(
@@ -56,6 +58,7 @@ export const useScheduleStore = create<ScheduleState>()(
       isLoading: false,
       error: null,
       hasSeenCompletionNotice: false,
+      clockColor: '#3B82F6', // 기본 파란색
 
       initialize: async () => {
         try {
@@ -159,12 +162,15 @@ export const useScheduleStore = create<ScheduleState>()(
       clearError: () => set({ error: null }),
 
       setHasSeenCompletionNotice: (value) => set({ hasSeenCompletionNotice: value }),
+
+      setClockColor: (color) => set({ clockColor: color }),
     }),
     {
       name: 'schedule-store',
       partialize: (state) => ({
         selectedDate: state.selectedDate,
         hasSeenCompletionNotice: state.hasSeenCompletionNotice,
+        clockColor: state.clockColor,
         // highlightedId는 persist하지 않음 (임시값)
       }),
     }

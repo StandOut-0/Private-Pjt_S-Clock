@@ -143,7 +143,7 @@ function resolveOverlapLevel(items: { id: string; startMinutes: number; endMinut
 export function RingDial() {
   const { colors } = useTheme();
   const router = useRouter();
-  const { schedules, selectedDate, hasSeenCompletionNotice, setHasSeenCompletionNotice, loadSchedulesByDate } = useScheduleStore();
+  const { schedules, selectedDate, hasSeenCompletionNotice, setHasSeenCompletionNotice, loadSchedulesByDate, clockColor } = useScheduleStore();
   const [nowMinutes, setNowMinutes] = useState(getNowMinutes());
   const [selectedScheduleId, setSelectedScheduleId] = useState<string | null>(null);
   const [selectedHourRange, setSelectedHourRange] = useState<{ start: number; end: number } | null>(null);
@@ -369,7 +369,7 @@ export function RingDial() {
           style={[
             styles.outerRing,
             {
-              borderColor: isOuterActive ? colors.primary : colors.border,
+              borderColor: isOuterActive ? clockColor : colors.border,
             },
           ]}
         />
@@ -377,7 +377,7 @@ export function RingDial() {
           style={[
             styles.innerRing,
             {
-              borderColor: isOuterActive ? colors.border : colors.primary,
+              borderColor: isOuterActive ? colors.border : clockColor,
             },
           ]}
         />
@@ -396,7 +396,7 @@ export function RingDial() {
                   left: point.x - 16,
                   top: point.y - 14,
                   zIndex: 60,
-                  backgroundColor: isSelected ? colors.primary : 'transparent',
+                  backgroundColor: isSelected ? clockColor : 'transparent',
                   borderRadius: 12,
                   padding: 4,
                   minWidth: 28,
@@ -425,7 +425,7 @@ export function RingDial() {
                   left: point.x - 16,
                   top: point.y - 11,
                   zIndex: 60,
-                  backgroundColor: isSelected ? colors.primary : 'transparent',
+                  backgroundColor: isSelected ? clockColor : 'transparent',
                   borderRadius: 12,
                   padding: 4,
                   minWidth: 28,
@@ -605,7 +605,7 @@ export function RingDial() {
           style={[
             styles.hand,
             {
-              backgroundColor: colors.primary,
+              backgroundColor: clockColor,
               width: handLength,
               left: handMidX - handLength / 2,
               top: handMidY - 1,
@@ -614,7 +614,7 @@ export function RingDial() {
             },
           ]}
         />
-        <View style={[styles.centerDot, { backgroundColor: colors.primary, zIndex: 100 }]} />
+        <View style={[styles.centerDot, { backgroundColor: clockColor, zIndex: 100 }]} />
       </Animated.View>
 
       {/* 테스트 컨트롤 - 나중에 사용 가능 */}

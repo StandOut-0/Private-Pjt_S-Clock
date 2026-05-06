@@ -3,9 +3,12 @@ import { View, StyleSheet, Pressable, Modal, ScrollView } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 import { ThemedText } from './ui/ThemedText';
 import { Platform } from 'react-native';
+import { useScheduleStore } from '../store/scheduleStore';
+import { ColorPicker } from './ColorPicker';
 
 export function SettingsButton() {
   const { colors, mode, toggleMode } = useTheme();
+  const { clockColor, setClockColor } = useScheduleStore();
   const [visible, setVisible] = useState(false);
 
   return (
@@ -35,8 +38,27 @@ export function SettingsButton() {
             style={[styles.modal, { backgroundColor: colors.card }]}
             onStartShouldSetResponder={() => true}
           >
-            <ScrollView>
+            <ScrollView 
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.scrollContent}
+              style={styles.scrollView}
+            >
               <ThemedText style={styles.title}>⚙️ 설정</ThemedText>
+
+              {/* Clock Color Setting */}
+              <View style={styles.section}>
+                <ThemedText style={styles.sectionTitle}>시계 색상</ThemedText>
+                <View style={styles.colorPreviewContainer}>
+                  <View 
+                    style={[styles.currentColorPreview, { backgroundColor: clockColor }]} 
+                  />
+                  <ThemedText style={styles.currentColorText}>현재: {clockColor}</ThemedText>
+                </View>
+                <ColorPicker 
+                  selectedColor={clockColor}
+                  onSelectColor={setClockColor}
+                />
+              </View>
 
               {/* Dark Mode Toggle */}
               <View style={styles.section}>
@@ -90,6 +112,12 @@ const styles = StyleSheet.create({
     padding: 20,
     maxHeight: '80%',
   },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 20,
+  },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
@@ -103,6 +131,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 10,
+  },
+  colorPreviewContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 8,
+  },
+  currentColorPreview: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  currentColorText: {
+    fontSize: 14,
+    opacity: 0.8,
   },
   toggleButton: {
     padding: 12,
