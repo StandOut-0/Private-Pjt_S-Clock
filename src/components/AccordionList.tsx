@@ -169,10 +169,9 @@ export function AccordionList({ schedules }: AccordionListProps) {
                               ]}
                               numberOfLines={1}
                             >
-                              {schedule.title}
-                            </ThemedText>
-                            <ThemedText muted style={styles.scheduleTime}>
-                              {schedule.startTime} ~ {schedule.endTime}
+                              <ThemedText style={styles.timeText}>
+                                {schedule.startTime} ~ {schedule.endTime}
+                              </ThemedText> {schedule.title}
                             </ThemedText>
                           </View>
                         </Pressable>
@@ -247,7 +246,7 @@ const styles = StyleSheet.create({
   scheduleItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 8,
     paddingHorizontal: 12,
     borderBottomWidth: 1,
     gap: 12,
@@ -262,16 +261,20 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scheduleTitle: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '500',
-    marginBottom: 2,
+    marginBottom: 1,
   },
   completedTitle: {
     textDecorationLine: 'line-through',
     opacity: 0.5,
   },
   scheduleTime: {
-    fontSize: 12,
+    fontSize: 11,
+  },
+  timeText: {
+    fontSize: 11,
+    opacity: 0.6,
   },
   completedBadge: {
     width: 20,

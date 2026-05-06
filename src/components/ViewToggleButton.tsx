@@ -1,14 +1,17 @@
 import { Pressable, StyleSheet } from 'react-native';
-import { useRouter, usePathname } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useTheme } from '../theme/ThemeProvider';
 import { ThemedText } from './ui/ThemedText';
 
-export function ViewToggleButton() {
+interface ViewToggleButtonProps {
+  currentView: 'ring' | 'list';
+}
+
+export function ViewToggleButton({ currentView }: ViewToggleButtonProps) {
   const router = useRouter();
-  const pathname = usePathname();
   const { colors } = useTheme();
 
-  const isRingView = pathname === '/' || pathname === '/index';
+  const isRingView = currentView === 'ring';
 
   return (
     <Pressable

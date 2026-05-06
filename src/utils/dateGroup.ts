@@ -48,7 +48,7 @@ export function groupSchedulesByDate(schedules: Schedule[]): YearMonthGroup[] {
         month: date.getMonth() + 1,
         day: date.getDate(),
         dateString: dateKey,
-        displayDate: format(date, 'M월 d일 (EEE)', { locale: ko }),
+        displayDate: format(date, 'M/d (EEE)', { locale: ko }),
         schedules: [],
       });
     }
@@ -66,7 +66,7 @@ export function groupSchedulesByDate(schedules: Schedule[]): YearMonthGroup[] {
       yearMonthMap.set(key, {
         year: dayGroup.year,
         month: dayGroup.month,
-        displayMonth: `${dayGroup.year}년 ${dayGroup.month}월`,
+        displayMonth: `${dayGroup.year}/${dayGroup.month}`,
         days: [],
       });
     }

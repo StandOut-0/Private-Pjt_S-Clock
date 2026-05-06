@@ -5,7 +5,11 @@ import { ThemedText } from '../../src/components/ui/ThemedText';
 import { ThemedView } from '../../src/components/ui/ThemedView';
 import { typography } from '../../src/theme/typography';
 import { RingDial } from '../../src/components/RingDial/RingDial';
+import { CommonHeader } from '../../src/components/CommonHeader';
+import { ViewToggleButton } from '../../src/components/ViewToggleButton';
+import { DateNavigation } from '../../src/components/DateNavigation';
 import { useScheduleStore } from '../../src/store/scheduleStore';
+import { getContrastTextColor } from '../../src/utils/colorUtils';
 
 function getCurrentTimeString(): string {
   const now = new Date();
@@ -18,8 +22,21 @@ export default function RingView() {
   const [currentTime, setCurrentTime] = useState(getCurrentTimeString());
   const schedules = useScheduleStore((state) => state.schedules);
   const selectedDate = useScheduleStore((state) => state.selectedDate);
+  const setSelectedDate = useScheduleStore((state) => state.setSelectedDate);
   const loadSchedulesByDate = useScheduleStore((state) => state.loadSchedulesByDate);
+  const clockColor = useScheduleStore((state) => state.clockColor);
   const router = useRouter();
+
+  // 날짜 변경 핸들러
+  const handleDateChange = useCallback((newDate: string) => {
+    setSelectedDate(newDate);
+    loadSchedulesByDate(newDate);
+  }, [setSelectedDate, loadSchedulesByDate]);
+
+  // 시간 리셋 핸들러
+  const handleTimeReset = useCallback(() => {
+    setCurrentTime('00:00');
+  }, []);
 
   // 해당 날짜의 스케줄 필터링 및 완료율 계산
   const todaySchedules = schedules.filter((s) => s.date === selectedDate);
@@ -35,11 +52,11 @@ export default function RingView() {
   );
 
   useEffect(() => {
-    const interval = setInterval(() => {
+    const timer = setInterval(() => {
       setCurrentTime(getCurrentTimeString());
     }, 1000);
-    return () => clearInterval(interval);
-  }, []);
+    return () => clearInterval(timer);
+  }, [selectedDate]);
 
   const handleCreate = () => {
     const hourCounts: Record<number, number> = {};
@@ -57,6 +74,9 @@ export default function RingView() {
 
   return (
     <ThemedView style={styles.container}>
+      {/* 공통 헤더 */}
+      <CommonHeader currentView="ring" onDateChange={handleDateChange} onTimeReset={handleTimeReset} />
+      
       {/* 시간 표시 */}
       <ThemedText style={styles.timeText}>{currentTime}</ThemedText>
       
@@ -72,9 +92,12 @@ export default function RingView() {
       
       <RingDial />
       
+      {/* 날짜 네비게이션 (맨 아래) */}
+      <DateNavigation onDateChange={handleDateChange} onTimeReset={handleTimeReset} />
+      
       {/* FAB - 추가 버튼 (오른쪽 아래) */}
-      <Pressable onPress={handleCreate} style={styles.fab} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-        <ThemedText style={styles.fabText}>+</ThemedText>
+      <Pressable onPress={handleCreate} style={[styles.fab, { backgroundColor: clockColor }]} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <ThemedText style={[styles.fabText, { color: getContrastTextColor(clockColor) }]}>+</ThemedText>
       </Pressable>
     </ThemedView>
   );
@@ -83,9 +106,7 @@ export default function RingView() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    // padding: 20,
+    paddingBottom: 20,
   },
   // card: {
   //   width: '100%',
@@ -94,10 +115,18 @@ const styles = StyleSheet.create({
   //   borderRadius: 16,
   //   alignItems: 'center',
   // },
+  viewToggleContainer: {
+    position: 'absolute',
+    top: 80,
+    right: 20,
+    zIndex: 100,
+  },
   timeText: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 8,
+    textAlign: 'center',
+    marginTop: 20,
   },
   headerRow: {
     flexDirection: 'row',
