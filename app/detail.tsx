@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { View, StyleSheet, Pressable, TextInput, Alert, ScrollView } from 'react-native';
 import { ThemedText } from '../src/components/ui/ThemedText';
 import { ThemedView } from '../src/components/ui/ThemedView';
@@ -23,7 +23,7 @@ function getRandomColor(): string {
 }
 
 export default function DetailScreen() {
-  const { id, date: paramDate, new: isNew } = useLocalSearchParams<{ id?: string; date?: string; new?: string }>();
+  const { id, date: paramDate, new: isNew, from } = useLocalSearchParams<{ id?: string; date?: string; new?: string; from?: string }>();
   const router = useRouter();
   const { colors } = useTheme();
   const loadSchedulesByDate = useScheduleStore((state) => state.loadSchedulesByDate);
@@ -33,6 +33,15 @@ export default function DetailScreen() {
 
   const selectedDate = paramDate || new Date().toISOString().split('T')[0];
   const isNewSchedule = isNew === 'true' || !id;
+
+  // 뒤로 가기 처리 (from 파라미터에 따라 탭 이동)
+  const handleGoBack = useCallback(() => {
+    if (from === 'list') {
+      router.push('/(tabs)/list');
+    } else {
+      router.back();
+    }
+  }, [from, router]);
 
   const [schedule, setSchedule] = useState<Schedule | null>(null);
   const [title, setTitle] = useState('');
@@ -130,7 +139,7 @@ export default function DetailScreen() {
         // update도 optimistic update됨
         setIsEditing(false);
       }
-      router.back();
+      handleGoBack();
     } catch (error) {
       console.error('[Detail] Save error:', error);
       alert('저장에 실패했습니다');
@@ -159,7 +168,7 @@ export default function DetailScreen() {
       console.log('[Detail] Delete success via store');
 
       // 2. 뒤로 가기 (먼저 실행해서 화면 전환)
-      router.back();
+      handleGoBack();
 
       // 3. 스케줄 다시 로드 (현재 선택된 날짜로)
       setTimeout(async () => {
@@ -203,7 +212,7 @@ export default function DetailScreen() {
     return (
       <ThemedView style={styles.container}>
         <ThemedText>스케줄을 찾을 수 없습니다</ThemedText>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
+        <Pressable onPress={handleGoBack} style={styles.backButton}>
           <ThemedText>돌아가기</ThemedText>
         </Pressable>
       </ThemedView>
@@ -214,7 +223,7 @@ export default function DetailScreen() {
     <ThemedView style={styles.container}>
       <ScrollView style={styles.scrollView}>
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backButton}>
+          <Pressable onPress={handleGoBack} style={styles.backButton}>
             <ThemedText style={styles.backText}>← {isNewSchedule ? '취소' : '뒤로'}</ThemedText>
           </Pressable>
           <View style={styles.headerButtons}>

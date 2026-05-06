@@ -1,15 +1,35 @@
-import { StyleSheet } from 'react-native';
+import { useCallback } from 'react';
+import { StyleSheet, ScrollView, RefreshControl } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { ThemedText } from '../../src/components/ui/ThemedText';
 import { ThemedView } from '../../src/components/ui/ThemedView';
-import { typography } from '../../src/theme/typography';
+import { useTheme } from '../../src/theme/ThemeProvider';
+import { useScheduleStore } from '../../src/store/scheduleStore';
+import { AccordionList } from '../../src/components/AccordionList';
 
 export default function ListView() {
+  const { colors } = useTheme();
+  const { schedules, loadSchedules, isLoading } = useScheduleStore();
+
+  // 화면 포커스 시 전체 스케줄 로드
+  useFocusEffect(
+    useCallback(() => {
+      loadSchedules();
+    }, [loadSchedules])
+  );
+
   return (
     <ThemedView style={styles.container}>
-      <ThemedView useCard style={styles.card}>
-        <ThemedText style={styles.title}>List View</ThemedText>
-        <ThemedText muted>공통 Themed Text/View 적용</ThemedText>
-      </ThemedView>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl refreshing={isLoading} onRefresh={loadSchedules} />
+        }
+      >
+        <ThemedText style={styles.headerTitle}>전체 스케줄</ThemedText>
+        <AccordionList schedules={schedules} />
+      </ScrollView>
     </ThemedView>
   );
 }
@@ -17,19 +37,17 @@ export default function ListView() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
   },
-  card: {
-    width: '100%',
-    maxWidth: 360,
-    padding: 20,
-    borderRadius: 16,
+  scrollView: {
+    flex: 1,
   },
-  title: {
-    fontSize: typography.size.lg,
-    lineHeight: typography.lineHeight.lg,
-    marginBottom: 8,
+  content: {
+    padding: 16,
+    paddingTop: 60,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 20,
   },
 });
