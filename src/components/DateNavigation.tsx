@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Pressable, Modal, TouchableOpacity, Text } from 'react-native';
+import { View, StyleSheet, Pressable, Modal } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 import { ThemedText } from './ui/ThemedText';
 import { useScheduleStore } from '../store/scheduleStore';
-import { format, getDaysInMonth, isSameDay } from 'date-fns';
+import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import { Calendar } from 'react-native-calendars';
 
 interface DateNavigationProps {
   onDateChange: (date: string) => void;
@@ -80,38 +81,29 @@ export function DateNavigation({ onDateChange, onTimeReset }: DateNavigationProp
         >
           <View style={[styles.calendarModal, { backgroundColor: colors.card }]}>
             <ThemedText style={styles.calendarTitle}>날짜 선택</ThemedText>
-            <View style={styles.simpleCalendar}>
-              <View style={styles.calendarHeader}>
-                <ThemedText style={styles.calendarHeaderText}>
-                  {format(new Date(selectedDate), 'yyyy년 M월', { locale: ko })}
-                </ThemedText>
-              </View>
-              <View style={styles.calendarGrid}>
-                {Array.from({ length: getDaysInMonth(new Date(selectedDate)) }, (_, i) => {
-                  const day = i + 1;
-                  const date = new Date(selectedDate);
-                  date.setDate(day);
-                  const dateStr = date.toISOString().split('T')[0];
-                  const isToday = isSameDay(date, new Date());
-                  
-                  return (
-                    <TouchableOpacity
-                      key={day}
-                      style={[
-                        styles.calendarDay,
-                        isToday && styles.calendarToday,
-                      ]}
-                      onPress={() => {
-                        onDateChange(dateStr);
-                        setShowCalendar(false);
-                      }}
-                    >
-                      <Text style={styles.calendarDayText}>{day}</Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </View>
+            <Calendar
+              current={selectedDate}
+              onDayPress={(day: any) => {
+                onDateChange(day.dateString);
+                setShowCalendar(false);
+              }}
+              monthFormat={'yyyy년 M월'}
+              locale={ko}
+              theme={{
+                backgroundColor: colors.card,
+                calendarBackground: colors.card,
+                textSectionTitleColor: colors.text,
+                selectedDayBackgroundColor: clockColor,
+                selectedDayTextColor: '#FFFFFF',
+                todayTextColor: clockColor,
+                dayTextColor: colors.text,
+                textDisabledColor: colors.mutedText,
+                arrowColor: clockColor,
+                monthTextColor: colors.text,
+                indicatorColor: clockColor,
+              }}
+              style={styles.reactNativeCalendar}
+            />
           </View>
         </Pressable>
       </Modal>
@@ -179,6 +171,10 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 20,
+  },
+  reactNativeCalendar: {
+    width: '100%',
+    borderRadius: 8,
   },
   simpleCalendar: {
     width: '100%',
