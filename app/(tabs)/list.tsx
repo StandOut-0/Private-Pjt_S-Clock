@@ -9,6 +9,7 @@ import { useScheduleStore } from '../../src/store/scheduleStore';
 import { AccordionList } from '../../src/components/AccordionList';
 import { CommonHeader } from '../../src/components/CommonHeader';
 import { ViewToggleButton } from '../../src/components/ViewToggleButton';
+import { ViewModeRadio } from '../../src/components/ViewModeRadio';
 
 type ViewMode = 'daily' | 'weekly';
 
@@ -26,7 +27,7 @@ export default function ListView() {
   // FAB 핸들러
   const handleCreate = () => {
     const today = new Date().toISOString().split('T')[0];
-    router.push({ pathname: '/detail', params: { new: 'true', date: today } });
+    router.push({ pathname: '/detail', params: { new: 'true', date: today, from: 'list' } });
   };
 
   // 화면 포커스 시 전체 스케줄 로드
@@ -51,21 +52,8 @@ export default function ListView() {
       {/* 공통 헤더 */}
       <CommonHeader currentView="list" onDateChange={handleDateChange} />
       
-      {/* 일간/주간 토글 버튼 */}
-      <View style={styles.toggleContainer}>
-        <Pressable
-          onPress={() => setViewMode('daily')}
-          style={[styles.toggleButton, viewMode === 'daily' && styles.toggleButtonActive, { borderColor: clockColor }]}
-        >
-          <ThemedText style={[styles.toggleButtonText, viewMode === 'daily' && { color: clockColor }]}>일간</ThemedText>
-        </Pressable>
-        <Pressable
-          onPress={() => setViewMode('weekly')}
-          style={[styles.toggleButton, viewMode === 'weekly' && styles.toggleButtonActive, { borderColor: clockColor }]}
-        >
-          <ThemedText style={[styles.toggleButtonText, viewMode === 'weekly' && { color: clockColor }]}>주간</ThemedText>
-        </Pressable>
-      </View>
+      {/* 일간/주간 라디오 버튼 */}
+      <ViewModeRadio value={viewMode} onValueChange={setViewMode} />
       
       <ScrollView
         style={styles.scrollView}
@@ -103,28 +91,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 20,
   },
-  toggleContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    marginBottom: 16,
-  },
-  toggleButton: {
-    flex: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderWidth: 1,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginRight: 8,
-  },
-  toggleButtonActive: {
-    backgroundColor: '#E5E7EB',
-  },
-  toggleButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  viewToggleContainer: {
+    viewToggleContainer: {
     position: 'absolute',
     top: 80,
     right: 20,

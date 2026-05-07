@@ -40,6 +40,14 @@ export function hslToHex({ h, s, l }: HSLColor): string {
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`.toUpperCase();
 }
 
+// Hex를 RGB로 변환 (getContrastTextColor용)
+export function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+  return { r, g, b };
+}
+
 // Hex를 HSL로 변환
 export function hexToHsl(hex: string): HSLColor {
   const r = parseInt(hex.slice(1, 3), 16) / 255;
@@ -119,6 +127,9 @@ export function checkDarkModeReadability(hex: string): {
 
 // 배경색에 따른 대비 텍스트 색상 (흰색/검정)
 export function getContrastTextColor(hex: string): string {
-  const { l } = hexToHsl(hex);
-  return l > 50 ? '#000000' : '#FFFFFF';
+  const { r, g, b } = hexToRgb(hex);
+  // WCAG 명도 계산: 0.299*R + 0.587*G + 0.114*B
+  // hexToRgb가 이미 0-1 범위로 정규화되어 있으므로 그대로 사용
+  const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+  return luminance > 0.5 ? '#000000' : '#FFFFFF';
 }

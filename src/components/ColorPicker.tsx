@@ -7,6 +7,7 @@ import {
   checkDarkModeReadability,
   hexToHsl,
   hslToHex,
+  getContrastTextColor,
 } from '../utils/colorGen';
 
 interface ColorPickerProps {
@@ -18,6 +19,9 @@ export function ColorPicker({ selectedColor, onSelectColor }: ColorPickerProps) 
   const { colors } = useTheme();
   const [customHex, setCustomHex] = useState(selectedColor.replace('#', ''));
   const [hslValues, setHslValues] = useState(hexToHsl(selectedColor));
+  
+  // 선택된 색상에 따른 텍스트 색상 결정
+  const textColor = colors.text; // 테마 색상 사용 (다크모드 대응)
 
   // 커스텀 hex 입력 처리
   const handleCustomHexChange = (text: string) => {

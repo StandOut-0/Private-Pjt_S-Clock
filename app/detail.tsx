@@ -7,7 +7,7 @@ import { useTheme } from '../src/theme/ThemeProvider';
 import { useScheduleStore } from '../src/store/scheduleStore';
 import { Schedule, getScheduleById, updateSchedule, createSchedule } from '../src/db/database';
 import { ColorPicker } from '../src/components/ColorPicker';
-import { generateRandomColor } from '../src/utils/colorGen';
+import { generateRandomColor, getContrastTextColor } from '../src/utils/colorGen';
 
 function generateId(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -30,6 +30,7 @@ export default function DetailScreen() {
   const deleteScheduleFromStore = useScheduleStore((state) => state.deleteSchedule);
   const createScheduleFromStore = useScheduleStore((state) => state.createSchedule);
   const schedules = useScheduleStore((state) => state.schedules);
+  const clockColor = useScheduleStore((state) => state.clockColor);
 
   const selectedDate = paramDate || new Date().toISOString().split('T')[0];
   const isNewSchedule = isNew === 'true' || !id;
@@ -230,9 +231,9 @@ export default function DetailScreen() {
             {!isNewSchedule && !isEditing ? (
               <Pressable
                 onPress={() => setIsEditing(true)}
-                style={[styles.editButton, { backgroundColor: colors.primary }]}
+                style={[styles.editButton, { backgroundColor: clockColor }]}
               >
-                <ThemedText style={styles.buttonText}>편집</ThemedText>
+                <ThemedText style={[styles.buttonText, { color: getContrastTextColor(clockColor) }]}>편집</ThemedText>
               </Pressable>
             ) : (
               <Pressable
@@ -240,10 +241,10 @@ export default function DetailScreen() {
                 disabled={isHourFull}
                 style={[
                   styles.saveButton,
-                  { backgroundColor: isHourFull ? '#9CA3AF' : colors.primary },
+                  { backgroundColor: isHourFull ? '#9CA3AF' : clockColor },
                 ]}
               >
-                <ThemedText style={styles.buttonText}>저장</ThemedText>
+                <ThemedText style={[styles.buttonText, { color: getContrastTextColor(clockColor) }]}>저장</ThemedText>
               </Pressable>
             )}
           </View>

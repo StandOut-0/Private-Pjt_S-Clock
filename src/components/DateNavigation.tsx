@@ -138,10 +138,12 @@ const styles = StyleSheet.create({
   },
   leftSection: {
     flex: 1,
+    marginRight: 16,
   },
   rightSection: {
     flex: 1,
     alignItems: 'flex-end',
+    marginLeft: 16,
   },
   dateButton: {
     width: 28,

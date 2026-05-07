@@ -6,6 +6,7 @@ import { Platform } from 'react-native';
 import { useScheduleStore } from '../store/scheduleStore';
 import { ColorPicker } from './ColorPicker';
 import { exportSchedulesToJson, exportSchedulesByDate } from '../utils/exportJson';
+import { getContrastTextColor } from '../utils/colorGen';
 
 export function SettingsButton() {
   const { colors, mode, toggleMode } = useTheme();
@@ -111,13 +112,13 @@ export function SettingsButton() {
                   onPress={handleExportSelectedDate}
                   style={[styles.exportButton, { backgroundColor: clockColor }]}
                 >
-                  <ThemedText style={styles.exportButtonText}>선택한 날짜 다운</ThemedText>
+                  <ThemedText style={[styles.exportButtonText, { color: getContrastTextColor(clockColor) }]}>선택한 날짜 다운</ThemedText>
                 </Pressable>
                 <Pressable
                   onPress={handleExportAll}
                   style={[styles.exportButton, { backgroundColor: clockColor, marginTop: 8 }]}
                 >
-                  <ThemedText style={styles.exportButtonText}>전체 다운</ThemedText>
+                  <ThemedText style={[styles.exportButtonText, { color: getContrastTextColor(clockColor) }]}>전체 다운</ThemedText>
                 </Pressable>
               </View>
 

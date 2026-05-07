@@ -665,9 +665,9 @@ export function RingDial() {
               </Pressable>
               <Pressable
                 onPress={() => handleDialogConfirm(false)}
-                style={[styles.dialogButton, { backgroundColor: colors.primary }]}
+                style={[styles.dialogButton, { backgroundColor: clockColor }]}
               >
-                <ThemedText style={{ fontWeight: '600', fontSize: 14, color: '#FFFFFF' }}>확인</ThemedText>
+                <ThemedText style={{ fontWeight: '600', fontSize: 14, color: getContrastColor(clockColor) }}>확인</ThemedText>
               </Pressable>
             </View>
           </View>
@@ -680,6 +680,7 @@ export function RingDial() {
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
+    marginTop: -20,
   },
   wrapper: {
     width: DIAL_SIZE,

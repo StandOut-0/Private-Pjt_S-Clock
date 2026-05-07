@@ -70,6 +70,7 @@ export default function RingView() {
   }, [loadSchedulesByDate, selectedDate]);
 
   const handleCreate = () => {
+    // 시간대 확인
     const hourCounts: Record<number, number> = {};
     for (const schedule of todaySchedules) {
       const [hours] = schedule.startTime.split(':').map(Number);
@@ -80,7 +81,7 @@ export default function RingView() {
       Alert.alert('알림', '오늘은 이미 모든 시간대에 3개의 스케줄이 등록되어 더 이상 추가할 수 없습니다.');
       return;
     }
-    router.push({ pathname: '/detail', params: { new: 'true', date: selectedDate } });
+    router.push({ pathname: '/detail', params: { new: 'true', date: selectedDate, from: 'ring' } });
   };
 
   return (
@@ -88,8 +89,10 @@ export default function RingView() {
       {/* 공통 헤더 */}
       <CommonHeader currentView="ring" onDateChange={handleDateChange} onTimeReset={handleTimeReset} />
       
-      {/* 시간 표시 */}
-      <ThemedText style={styles.timeText}>{currentTime}</ThemedText>
+      {/* 시간 표시 - 오늘일 때만 표시 */}
+      <ThemedText style={selectedDate === new Date().toISOString().split('T')[0] ? styles.timeText : styles.timeTextHidden}>
+        {currentTime}
+      </ThemedText>
       
       {/* 헤더: 프로그레스바 | 완료율 */}
       <View style={styles.headerRow}>
@@ -106,15 +109,7 @@ export default function RingView() {
         <DateNavigation onDateChange={handleDateChange} onTimeReset={handleTimeReset} />
       </View>
       
-      {todaySchedules.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <CalendarIcon size={64} color={clockColor} />
-          <ThemedText style={styles.emptyTitle}>오늘의 스케줄이 없습니다</ThemedText>
-          <ThemedText style={styles.emptySubtitle}>+ 버튼을 눌러 스케줄을 추가하세요</ThemedText>
-        </View>
-      ) : (
-        <RingDial />
-      )}
+      <RingDial />
       
       {/* FAB - 추가 버튼 (오른쪽 아래) */}
       <Pressable onPress={handleCreate} style={[styles.fab, { backgroundColor: clockColor }]} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
@@ -147,14 +142,24 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 8,
     textAlign: 'center',
-    marginTop: 20,
+    marginTop: 60,
+    height: 32, // Add fixed height to maintain consistent spacing
+  },
+  timeTextHidden: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    textAlign: 'center',
+    marginTop: 60,
+    opacity: 0,
+    height: 32, // Add fixed height to maintain consistent spacing
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 40,
-    paddingTop: 40,
+    paddingTop: 100,
   },
   emptyTitle: {
     fontSize: 18,
@@ -172,7 +177,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   dateNavigationLarge: {
-    marginBottom: 0,
+    marginBottom: 20,
   },
   headerRow: {
     flexDirection: 'row',

@@ -57,14 +57,16 @@ export function AccordionList({ schedules, viewMode = 'daily' }: AccordionListPr
     return initial;
   });
 
-  // 일별 오픈 섹션 (기본: 모두 오픈)
+  // 일별 오픈 섹션 (기본: 일간 뷰에서만 오픈)
   const [openDays, setOpenDays] = useState<Set<string>>(() => {
     const initial = new Set<string>();
-    groupedData.forEach((group) => {
-      group.days.forEach((day) => {
-        initial.add(day.dateString);
+    if (viewMode === 'daily') {
+      groupedData.forEach((group) => {
+        group.days.forEach((day) => {
+          initial.add(day.dateString);
+        });
       });
-    });
+    }
     return initial;
   });
 
@@ -159,7 +161,7 @@ export function AccordionList({ schedules, viewMode = 'daily' }: AccordionListPr
                         style={[styles.dayHeader, { backgroundColor: colors.card }]}
                       >
                         <ThemedText style={styles.dayHeaderText}>
-                          {day.displayDate}
+                          - {day.displayDate}
                         </ThemedText>
                         <View style={styles.dayHeaderRight}>
                           <ThemedText muted style={styles.scheduleCount}>
