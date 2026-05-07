@@ -11,7 +11,7 @@ import { useRouter } from 'expo-router';
 import { useTheme } from '../theme/ThemeProvider';
 import { ThemedText } from './ui/ThemedText';
 import { Schedule } from '../db/database';
-import { YearMonthGroup, groupSchedulesByDate, findNearestSection } from '../utils/dateGroup';
+import { YearMonthGroup, WeekGroup, groupSchedulesByDate, groupSchedulesByWeek, findNearestSection } from '../utils/dateGroup';
 import { useScheduleStore } from '../store/scheduleStore';
 
 // Android에서 LayoutAnimation 활성화
@@ -21,9 +21,10 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 
 interface AccordionListProps {
   schedules: Schedule[];
+  viewMode?: 'daily' | 'weekly';
 }
 
-export function AccordionList({ schedules }: AccordionListProps) {
+export function AccordionList({ schedules, viewMode = 'daily' }: AccordionListProps) {
   const { colors } = useTheme();
   const router = useRouter();
   const { updateSchedule, loadSchedules } = useScheduleStore();
@@ -39,15 +40,31 @@ export function AccordionList({ schedules }: AccordionListProps) {
   });
 
   // 스케줄 그룹핑 (정렬된 것 사용)
-  const groupedData = groupSchedulesByDate(sortedSchedules);
+  const groupedData = viewMode === 'daily' 
+    ? groupSchedulesByDate(sortedSchedules) 
+    : groupSchedulesByWeek(sortedSchedules);
 
   // 초기 오픈 섹션 (오늘 또는 가장 최근)
   const [openSections, setOpenSections] = useState<Set<string>>(() => {
     const initial = new Set<string>();
-    const nearest = findNearestSection(groupedData);
-    if (nearest) {
-      initial.add(nearest);
+    if (groupedData.length > 0) {
+      // 첫 번째 섹션 오픈
+      const firstKey = viewMode === 'daily' 
+        ? `${(groupedData[0] as YearMonthGroup).year}-${(groupedData[0] as YearMonthGroup).month}`
+        : `${(groupedData[0] as WeekGroup).year}-${(groupedData[0] as WeekGroup).weekNumber}`;
+      initial.add(firstKey);
     }
+    return initial;
+  });
+
+  // 일별 오픈 섹션 (기본: 모두 오픈)
+  const [openDays, setOpenDays] = useState<Set<string>>(() => {
+    const initial = new Set<string>();
+    groupedData.forEach((group) => {
+      group.days.forEach((day) => {
+        initial.add(day.dateString);
+      });
+    });
     return initial;
   });
 
@@ -60,6 +77,20 @@ export function AccordionList({ schedules }: AccordionListProps) {
         next.delete(key);
       } else {
         next.add(key);
+      }
+      return next;
+    });
+  }, []);
+
+  // 일별 토글
+  const toggleDay = useCallback((dateString: string) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setOpenDays((prev) => {
+      const next = new Set(prev);
+      if (next.has(dateString)) {
+        next.delete(dateString);
+      } else {
+        next.add(dateString);
       }
       return next;
     });
@@ -91,19 +122,24 @@ export function AccordionList({ schedules }: AccordionListProps) {
 
   return (
     <View style={styles.container}>
-      {groupedData.map((yearMonth) => {
-        const sectionKey = `${yearMonth.year}-${yearMonth.month}`;
+      {groupedData.map((group) => {
+        const sectionKey = viewMode === 'daily'
+          ? `${(group as YearMonthGroup).year}-${(group as YearMonthGroup).month}`
+          : `${(group as WeekGroup).year}-${(group as WeekGroup).weekNumber}`;
         const isOpen = openSections.has(sectionKey);
+        const displayText = viewMode === 'daily'
+          ? (group as YearMonthGroup).displayMonth
+          : (group as WeekGroup).displayWeek;
 
         return (
           <View key={sectionKey} style={styles.monthSection}>
-            {/* 월 헤더 */}
+            {/* 섹션 헤더 */}
             <Pressable
               onPress={() => toggleSection(sectionKey)}
               style={[styles.monthHeader, { backgroundColor: colors.card }]}
             >
               <ThemedText style={styles.monthHeaderText}>
-                {yearMonth.displayMonth}
+                {displayText}
               </ThemedText>
               <ThemedText style={styles.chevron}>
                 {isOpen ? '▼' : '▶'}
@@ -113,72 +149,85 @@ export function AccordionList({ schedules }: AccordionListProps) {
             {/* 펼쳐진 내용 */}
             {isOpen && (
               <View style={styles.daysContainer}>
-                {yearMonth.days.map((day) => (
-                  <View key={day.dateString} style={styles.daySection}>
-                    {/* 일 헤더 */}
-                    <View style={styles.dayHeader}>
-                      <ThemedText style={styles.dayHeaderText}>
-                        {day.displayDate}
-                      </ThemedText>
-                      <ThemedText muted style={styles.scheduleCount}>
-                        {day.schedules.length}개
-                      </ThemedText>
-                    </View>
+                {group.days.map((day) => {
+                  const isDayOpen = openDays.has(day.dateString);
+                  return (
+                    <View key={day.dateString} style={styles.daySection}>
+                      {/* 일 헤더 */}
+                      <Pressable
+                        onPress={() => toggleDay(day.dateString)}
+                        style={[styles.dayHeader, { backgroundColor: colors.card }]}
+                      >
+                        <ThemedText style={styles.dayHeaderText}>
+                          {day.displayDate}
+                        </ThemedText>
+                        <View style={styles.dayHeaderRight}>
+                          <ThemedText muted style={styles.scheduleCount}>
+                            {day.schedules.length}개
+                          </ThemedText>
+                          <ThemedText style={styles.dayChevron}>
+                            {isDayOpen ? '▼' : '▶'}
+                          </ThemedText>
+                        </View>
+                      </Pressable>
 
-                    {/* 스케줄 목록 */}
-                    <View style={styles.schedulesList}>
-                      {day.schedules.map((schedule) => (
-                        <Pressable
-                          key={schedule.id}
-                          onPress={() => handleSchedulePress(schedule)}
-                          style={[styles.scheduleItem, { borderBottomColor: colors.border }]}
-                        >
-                          {/* 체크박스 */}
-                          <Pressable
-                            onPress={(e) => handleToggleComplete(schedule, e)}
-                            style={styles.checkboxContainer}
-                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                          >
-                            <View
-                              style={[
-                                styles.checkbox,
-                                { borderColor: schedule.color },
-                                schedule.completed && [
-                                  styles.checkboxChecked,
-                                  { backgroundColor: schedule.color },
-                                ],
-                              ]}
+                      {/* 스케줄 목록 */}
+                      {isDayOpen && (
+                        <View style={styles.schedulesList}>
+                          {day.schedules.map((schedule: Schedule) => (
+                            <Pressable
+                              key={schedule.id}
+                              onPress={() => handleSchedulePress(schedule)}
+                              style={[styles.scheduleItem, { borderBottomColor: colors.border }]}
                             >
-                              {schedule.completed && (
-                                <ThemedText style={styles.checkmark}>✓</ThemedText>
-                              )}
-                            </View>
-                          </Pressable>
+                              {/* 체크박스 */}
+                              <Pressable
+                                onPress={(e) => handleToggleComplete(schedule, e)}
+                                style={styles.checkboxContainer}
+                                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                              >
+                                <View
+                                  style={[
+                                    styles.checkbox,
+                                    { borderColor: schedule.color },
+                                    schedule.completed && [
+                                      styles.checkboxChecked,
+                                      { backgroundColor: schedule.color },
+                                    ],
+                                  ]}
+                                >
+                                  {schedule.completed && (
+                                    <ThemedText style={styles.checkmark}>✓</ThemedText>
+                                  )}
+                                </View>
+                              </Pressable>
 
-                          {/* 색상 도트 */}
-                          <View
-                            style={[styles.colorDot, { backgroundColor: schedule.color }]}
-                          />
+                              {/* 색상 도트 */}
+                              <View
+                                style={[styles.colorDot, { backgroundColor: schedule.color }]}
+                              />
 
-                          {/* 내용 */}
-                          <View style={styles.scheduleContent}>
-                            <ThemedText
-                              style={[
-                                styles.scheduleTitle,
-                                schedule.completed && styles.completedTitle,
-                              ]}
-                              numberOfLines={1}
-                            >
-                              <ThemedText style={styles.timeText}>
-                                {schedule.startTime} ~ {schedule.endTime}
-                              </ThemedText> {schedule.title}
-                            </ThemedText>
-                          </View>
-                        </Pressable>
-                      ))}
+                              {/* 내용 */}
+                              <View style={styles.scheduleContent}>
+                                <ThemedText
+                                  style={[
+                                    styles.scheduleTitle,
+                                    schedule.completed && styles.completedTitle,
+                                  ]}
+                                  numberOfLines={1}
+                                >
+                                  <ThemedText style={styles.timeText}>
+                                    {schedule.startTime} ~ {schedule.endTime}
+                                  </ThemedText> {schedule.title}
+                                </ThemedText>
+                              </View>
+                            </Pressable>
+                          ))}
+                        </View>
+                      )}
                     </View>
-                  </View>
-                ))}
+                  );
+                })}
               </View>
             )}
           </View>
@@ -236,6 +285,15 @@ const styles = StyleSheet.create({
   dayHeaderText: {
     fontSize: 14,
     fontWeight: '500',
+  },
+  dayHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  dayChevron: {
+    fontSize: 12,
+    opacity: 0.6,
   },
   scheduleCount: {
     fontSize: 12,

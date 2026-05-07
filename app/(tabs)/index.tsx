@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { StyleSheet, View, Pressable, Alert } from 'react-native';
+import { StyleSheet, View, Pressable, Alert, AppState } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { ThemedText } from '../../src/components/ui/ThemedText';
 import { ThemedView } from '../../src/components/ui/ThemedView';
@@ -8,6 +8,7 @@ import { RingDial } from '../../src/components/RingDial/RingDial';
 import { CommonHeader } from '../../src/components/CommonHeader';
 import { ViewToggleButton } from '../../src/components/ViewToggleButton';
 import { DateNavigation } from '../../src/components/DateNavigation';
+import { CalendarIcon } from '../../src/components/CalendarIcon';
 import { useScheduleStore } from '../../src/store/scheduleStore';
 import { getContrastTextColor } from '../../src/utils/colorUtils';
 
@@ -58,6 +59,16 @@ export default function RingView() {
     return () => clearInterval(timer);
   }, [selectedDate]);
 
+  // AppState 이벤트 처리 - 앱이 백그라운드에서 포그라운드로 돌아올 때 데이터 새로고침
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'active') {
+        loadSchedulesByDate(selectedDate);
+      }
+    });
+    return () => subscription.remove();
+  }, [loadSchedulesByDate, selectedDate]);
+
   const handleCreate = () => {
     const hourCounts: Record<number, number> = {};
     for (const schedule of todaySchedules) {
@@ -84,16 +95,26 @@ export default function RingView() {
       <View style={styles.headerRow}>
         <View style={styles.progressWrapper}>
           <View style={styles.progressBarBg}>
-            <View style={[styles.progressBarFill, { width: `${completionRate}%` }]} />
+            <View style={[styles.progressBarFill, { width: `${completionRate}%`, backgroundColor: clockColor }]} />
           </View>
         </View>
         <ThemedText style={styles.rateText}>{completionRate}% ({completedCount}/{totalCount})</ThemedText>
       </View>
       
-      <RingDial />
+      {/* 날짜 네비게이션 (시계 위) */}
+      <View style={todaySchedules.length === 0 ? styles.dateNavigationSmall : styles.dateNavigationLarge}>
+        <DateNavigation onDateChange={handleDateChange} onTimeReset={handleTimeReset} />
+      </View>
       
-      {/* 날짜 네비게이션 (맨 아래) */}
-      <DateNavigation onDateChange={handleDateChange} onTimeReset={handleTimeReset} />
+      {todaySchedules.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <CalendarIcon size={64} color={clockColor} />
+          <ThemedText style={styles.emptyTitle}>오늘의 스케줄이 없습니다</ThemedText>
+          <ThemedText style={styles.emptySubtitle}>+ 버튼을 눌러 스케줄을 추가하세요</ThemedText>
+        </View>
+      ) : (
+        <RingDial />
+      )}
       
       {/* FAB - 추가 버튼 (오른쪽 아래) */}
       <Pressable onPress={handleCreate} style={[styles.fab, { backgroundColor: clockColor }]} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
@@ -127,6 +148,31 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     textAlign: 'center',
     marginTop: 20,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+    paddingTop: 40,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 8,
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    opacity: 0.6,
+    textAlign: 'center',
+  },
+  dateNavigationSmall: {
+    marginBottom: 20,
+  },
+  dateNavigationLarge: {
+    marginBottom: 0,
   },
   headerRow: {
     flexDirection: 'row',

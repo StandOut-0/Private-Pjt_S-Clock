@@ -1,15 +1,36 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Pressable, Modal, ScrollView } from 'react-native';
+import { View, StyleSheet, Pressable, Modal, ScrollView, Alert } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 import { ThemedText } from './ui/ThemedText';
 import { Platform } from 'react-native';
 import { useScheduleStore } from '../store/scheduleStore';
 import { ColorPicker } from './ColorPicker';
+import { exportSchedulesToJson, exportSchedulesByDate } from '../utils/exportJson';
 
 export function SettingsButton() {
   const { colors, mode, toggleMode } = useTheme();
-  const { clockColor, setClockColor } = useScheduleStore();
+  const { clockColor, setClockColor, schedules, loadSchedules, selectedDate } = useScheduleStore();
   const [visible, setVisible] = useState(false);
+
+  const handleExportAll = async () => {
+    try {
+      await loadSchedules();
+      await exportSchedulesToJson(schedules);
+    } catch (error) {
+      Alert.alert('오류', '전체 내보내기에 실패했습니다.');
+      console.error(error);
+    }
+  };
+
+  const handleExportSelectedDate = async () => {
+    try {
+      await loadSchedules();
+      await exportSchedulesByDate(schedules, selectedDate);
+    } catch (error) {
+      Alert.alert('오류', '선택한 날짜 내보내기에 실패했습니다.');
+      console.error(error);
+    }
+  };
 
   return (
     <>
@@ -82,6 +103,23 @@ export function SettingsButton() {
                   </ThemedText>
                 </View>
               )}
+
+              {/* Export Data */}
+              <View style={styles.section}>
+                <ThemedText style={styles.sectionTitle}>📤 데이터 내보내기</ThemedText>
+                <Pressable
+                  onPress={handleExportSelectedDate}
+                  style={[styles.exportButton, { backgroundColor: clockColor }]}
+                >
+                  <ThemedText style={styles.exportButtonText}>선택한 날짜 다운</ThemedText>
+                </Pressable>
+                <Pressable
+                  onPress={handleExportAll}
+                  style={[styles.exportButton, { backgroundColor: clockColor, marginTop: 8 }]}
+                >
+                  <ThemedText style={styles.exportButtonText}>전체 다운</ThemedText>
+                </Pressable>
+              </View>
 
               <Pressable
                 onPress={() => setVisible(false)}
@@ -159,6 +197,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 22,
     opacity: 0.8,
+  },
+  exportButton: {
+    padding: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  exportButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 14,
   },
   closeButton: {
     padding: 12,

@@ -1,5 +1,5 @@
-import { useCallback } from 'react';
-import { StyleSheet, ScrollView, RefreshControl, View, Pressable, Alert } from 'react-native';
+import { useCallback, useState, useEffect } from 'react';
+import { StyleSheet, ScrollView, RefreshControl, View, Pressable, Alert, AppState } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { ThemedText } from '../../src/components/ui/ThemedText';
@@ -10,10 +10,13 @@ import { AccordionList } from '../../src/components/AccordionList';
 import { CommonHeader } from '../../src/components/CommonHeader';
 import { ViewToggleButton } from '../../src/components/ViewToggleButton';
 
+type ViewMode = 'daily' | 'weekly';
+
 export default function ListView() {
   const { colors } = useTheme();
   const { schedules, loadSchedules, isLoading, setSelectedDate, clockColor } = useScheduleStore();
   const router = useRouter();
+  const [viewMode, setViewMode] = useState<ViewMode>('daily');
 
   // 날짜 변경 핸들러
   const handleDateChange = useCallback((newDate: string) => {
@@ -33,10 +36,36 @@ export default function ListView() {
     }, [loadSchedules])
   );
 
+  // AppState 이벤트 처리 - 앱이 백그라운드에서 포그라운드로 돌아올 때 데이터 새로고침
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'active') {
+        loadSchedules();
+      }
+    });
+    return () => subscription.remove();
+  }, [loadSchedules]);
+
   return (
     <ThemedView style={styles.container}>
       {/* 공통 헤더 */}
       <CommonHeader currentView="list" onDateChange={handleDateChange} />
+      
+      {/* 일간/주간 토글 버튼 */}
+      <View style={styles.toggleContainer}>
+        <Pressable
+          onPress={() => setViewMode('daily')}
+          style={[styles.toggleButton, viewMode === 'daily' && styles.toggleButtonActive, { borderColor: clockColor }]}
+        >
+          <ThemedText style={[styles.toggleButtonText, viewMode === 'daily' && { color: clockColor }]}>일간</ThemedText>
+        </Pressable>
+        <Pressable
+          onPress={() => setViewMode('weekly')}
+          style={[styles.toggleButton, viewMode === 'weekly' && styles.toggleButtonActive, { borderColor: clockColor }]}
+        >
+          <ThemedText style={[styles.toggleButtonText, viewMode === 'weekly' && { color: clockColor }]}>주간</ThemedText>
+        </Pressable>
+      </View>
       
       <ScrollView
         style={styles.scrollView}
@@ -47,7 +76,7 @@ export default function ListView() {
         }
       >
         <ThemedText style={styles.headerTitle}>전체 스케줄</ThemedText>
-        <AccordionList schedules={schedules} />
+        <AccordionList schedules={schedules} viewMode={viewMode} />
       </ScrollView>
       
       {/* FAB - 추가 버튼 (오른쪽 아래) */}
@@ -73,6 +102,27 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 20,
+  },
+  toggleContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    marginBottom: 16,
+  },
+  toggleButton: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  toggleButtonActive: {
+    backgroundColor: '#E5E7EB',
+  },
+  toggleButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
   viewToggleContainer: {
     position: 'absolute',
