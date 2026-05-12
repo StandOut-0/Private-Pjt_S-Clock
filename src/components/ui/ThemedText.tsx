@@ -11,6 +11,7 @@ export function ThemedText({ style, muted = false, ...props }: Props) {
 
   return (
     <Text
+      allowFontScaling={true}
       style={[
         {
           color: muted ? colors.mutedText : colors.text,

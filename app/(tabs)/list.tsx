@@ -6,7 +6,7 @@ import { ThemedText } from '../../src/components/ui/ThemedText';
 import { ThemedView } from '../../src/components/ui/ThemedView';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { useScheduleStore } from '../../src/store/scheduleStore';
-import { AccordionList } from '../../src/components/AccordionList';
+import { AnimatedAccordionList } from '../../src/components/AnimatedAccordionList';
 import { CommonHeader } from '../../src/components/CommonHeader';
 import { ViewToggleButton } from '../../src/components/ViewToggleButton';
 import { ViewModeRadio } from '../../src/components/ViewModeRadio';
@@ -64,7 +64,7 @@ export default function ListView() {
         }
       >
         <ThemedText style={styles.headerTitle}>전체 스케줄</ThemedText>
-        <AccordionList schedules={schedules} viewMode={viewMode} />
+        <AnimatedAccordionList schedules={schedules} viewMode={viewMode} />
       </ScrollView>
       
       {/* FAB - 추가 버튼 (오른쪽 아래) */}

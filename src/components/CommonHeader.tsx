@@ -5,7 +5,7 @@ import { useTheme } from '../theme/ThemeProvider';
 import { ThemedText } from './ui/ThemedText';
 import { useScheduleStore } from '../store/scheduleStore';
 import { SettingsButton } from './SettingsButton';
-import { ViewToggleButton } from './ViewToggleButton';
+import { AnimatedViewToggleButton } from './AnimatedViewToggleButton';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 
@@ -46,10 +46,17 @@ export function CommonHeader({ currentView, onDateChange, onTimeReset }: CommonH
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.card }]}>
+    <View style={[
+      styles.container, 
+      { 
+        backgroundColor: colors.card,
+        borderBottomColor: colors.border,
+        shadowColor: colors.text,
+      }
+    ]}>
       {/* 좌측: 모드 전환 + 앱 이름 */}
       <View style={styles.leftSection}>
-        <ViewToggleButton currentView={currentView} />
+        <AnimatedViewToggleButton currentView={currentView} />
         <ThemedText style={styles.titleText}>S Clock</ThemedText>
       </View>
 
@@ -69,9 +76,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.1)',
     elevation: 2,
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,

@@ -1,11 +1,13 @@
+import React from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { View, StyleSheet, Pressable, TextInput, Alert, ScrollView } from 'react-native';
+import { View, StyleSheet, Pressable, TextInput, Alert, ScrollView, Animated } from 'react-native';
 import { ThemedText } from '../../src/components/ui/ThemedText';
 import { ThemedView } from '../../src/components/ui/ThemedView';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { useScheduleStore } from '../../src/store/scheduleStore';
 import { Schedule, getScheduleById, updateSchedule, deleteSchedule } from '../../src/db/database';
+import { HapticFeedback } from '../../src/utils/haptics';
 
 export default function DetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -20,6 +22,26 @@ export default function DetailScreen() {
   const [memo, setMemo] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Slide-up 애니메이션
+  const slideAnim = React.useRef(new Animated.Value(300)).current;
+  const opacityAnim = React.useRef(new Animated.Value(0)).current;
+
+  // 애니메이션 시작
+  const startAnimation = () => {
+    Animated.parallel([
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacityAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
 
   useEffect(() => {
     loadSchedule();
@@ -37,6 +59,8 @@ export default function DetailScreen() {
       }
     } finally {
       setIsLoading(false);
+      // 데이터 로드 후 애니메이션 시작
+      startAnimation();
     }
   };
 
@@ -60,8 +84,10 @@ export default function DetailScreen() {
       }
 
       setIsEditing(false);
+      await HapticFeedback.success(); // 성공 햅틱 피드백
       Alert.alert('완료', '저장되었습니다');
     } catch (error) {
+      await HapticFeedback.error(); // 에러 햅틱 피드백
       Alert.alert('오류', '저장에 실패했습니다');
     }
   };
@@ -81,8 +107,10 @@ export default function DetailScreen() {
               if (schedule) {
                 await loadSchedulesByDate(schedule.date);
               }
+              await HapticFeedback.error(); // 삭제 에러 햅틱 피드백
               router.back();
             } catch (error) {
+              await HapticFeedback.error(); // 에러 햅틱 피드백
               Alert.alert('오류', '삭제에 실패했습니다');
             }
           },
@@ -112,7 +140,16 @@ export default function DetailScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView style={styles.scrollView}>
+      <Animated.View
+        style={[
+          styles.animatedContainer,
+          {
+            transform: [{ translateY: slideAnim }],
+            opacity: opacityAnim,
+          },
+        ]}
+      >
+        <ScrollView style={styles.scrollView}>
         {/* Header */}
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} style={styles.backButton}>
@@ -124,14 +161,14 @@ export default function DetailScreen() {
                 onPress={() => setIsEditing(true)}
                 style={[styles.editButton, { backgroundColor: colors.primary }]}
               >
-                <ThemedText style={styles.buttonText}>편집</ThemedText>
+                <ThemedText style={[styles.buttonText, { color: colors.white }]}>편집</ThemedText>
               </Pressable>
             ) : (
               <Pressable
                 onPress={handleSave}
                 style={[styles.saveButton, { backgroundColor: colors.primary }]}
               >
-                <ThemedText style={styles.buttonText}>저장</ThemedText>
+                <ThemedText style={[styles.buttonText, { color: colors.white }]}>저장</ThemedText>
               </Pressable>
             )}
           </View>
@@ -149,6 +186,7 @@ export default function DetailScreen() {
                 style={[styles.input, { borderColor: colors.border, color: colors.text }]}
                 placeholder="제목을 입력하세요"
                 placeholderTextColor={colors.mutedText}
+                allowFontScaling={true}
               />
             ) : (
               <View style={styles.valueContainer}>
@@ -170,6 +208,7 @@ export default function DetailScreen() {
                   placeholder="00:00"
                   placeholderTextColor={colors.mutedText}
                   maxLength={5}
+                  allowFontScaling={true}
                 />
                 <ThemedText style={styles.timeSeparator}>~</ThemedText>
                 <TextInput
@@ -179,6 +218,7 @@ export default function DetailScreen() {
                   placeholder="00:00"
                   placeholderTextColor={colors.mutedText}
                   maxLength={5}
+                  allowFontScaling={true}
                 />
               </View>
             ) : (
@@ -206,6 +246,7 @@ export default function DetailScreen() {
                 placeholderTextColor={colors.mutedText}
                 multiline
                 numberOfLines={4}
+                allowFontScaling={true}
               />
             ) : (
               <ThemedText style={styles.memoText}>
@@ -218,19 +259,23 @@ export default function DetailScreen() {
           {!isEditing && (
             <Pressable
               onPress={handleDelete}
-              style={[styles.deleteButton, { borderColor: '#EF4444' }]}
+              style={[styles.deleteButton, { borderColor: colors.error }]}
             >
-              <ThemedText style={{ color: '#EF4444' }}>삭제</ThemedText>
+              <ThemedText style={{ color: colors.error }}>삭제</ThemedText>
             </Pressable>
           )}
         </View>
-      </ScrollView>
+        </ScrollView>
+      </Animated.View>
     </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  animatedContainer: {
     flex: 1,
   },
   scrollView: {
@@ -264,7 +309,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   buttonText: {
-    color: '#fff',
+    // color는 동적으로 적용
     fontWeight: '600',
   },
   content: {

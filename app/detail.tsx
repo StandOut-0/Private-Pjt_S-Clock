@@ -8,6 +8,7 @@ import { useScheduleStore } from '../src/store/scheduleStore';
 import { Schedule, getScheduleById, updateSchedule, createSchedule } from '../src/db/database';
 import { ColorPicker } from '../src/components/ColorPicker';
 import { generateRandomColor, getContrastTextColor } from '../src/utils/colorGen';
+import { HapticFeedback } from '../src/utils/haptics';
 
 function generateId(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -128,6 +129,7 @@ export default function DetailScreen() {
           completed: false,
         });
         // 불필요한 loadSchedulesByDate 제거 - store에서 이미 처리
+        await HapticFeedback.success(); // 생성 성공 햅틱 피드백
       } else if (id) {
         await updateSchedule(id, {
           title: title.trim(),
@@ -139,10 +141,12 @@ export default function DetailScreen() {
         });
         // update도 optimistic update됨
         setIsEditing(false);
+        await HapticFeedback.success(); // 수정 성공 햅틱 피드백
       }
       handleGoBack();
     } catch (error) {
       console.error('[Detail] Save error:', error);
+      await HapticFeedback.error(); // 에러 햅틱 피드백
       alert('저장에 실패했습니다');
     }
   };
@@ -167,6 +171,7 @@ export default function DetailScreen() {
       // 1. 스케줄 삭제 (store 함수 사용)
       await deleteScheduleFromStore(id);
       console.log('[Detail] Delete success via store');
+      await HapticFeedback.error(); // 삭제 햅틱 피드백
 
       // 2. 뒤로 가기 (먼저 실행해서 화면 전환)
       handleGoBack();
@@ -182,6 +187,7 @@ export default function DetailScreen() {
       }, 100);
     } catch (error) {
       console.error('[Detail] Delete failed:', error);
+      await HapticFeedback.error(); // 에러 햅틱 피드백
       alert('삭제에 실패했습니다. 다시 시도해주세요.');
     }
   };
